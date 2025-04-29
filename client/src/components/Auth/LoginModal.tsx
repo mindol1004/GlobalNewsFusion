@@ -170,7 +170,7 @@ export default function LoginModal({ isOpen, onClose, onSignupClick }: LoginModa
               onClick={handleGoogleLogin}
               className="btn-apple w-full bg-white dark:bg-neutral-700 border border-neutral-200 dark:border-neutral-600 text-neutral-800 dark:text-white font-medium py-2.5 px-4 rounded-lg flex items-center justify-center mb-4"
             >
-              <i className="fab fa-google mr-2"></i> Google
+              <i className="fas fa-globe mr-2"></i> Google
             </Button>
             
             <div className="text-center text-sm text-neutral-600 dark:text-neutral-400">

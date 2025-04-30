@@ -1,13 +1,52 @@
 import axios from "axios";
 import { NewsApiResponse, NewsArticle } from "@shared/schema";
 
-// Use NewsData.io for getting news data
+// API Keys
 const NEWSDATA_IO_KEY = process.env.NEWSDATA_IO_KEY;
+const THE_NEWS_API_KEY = process.env.THE_NEWS_API_KEY;
+
 // Use NewsData.io API
 const USE_THE_NEWS_API = false;
 const API_BASE_URL = "https://newsdata.io/api/1/news";
 
 console.log(`Using NewsData.io for news data`);
+
+// Simple in-memory cache implementation
+interface Cache<T> {
+  get(key: string): T | undefined;
+  set(key: string, value: T): void;
+}
+
+class SimpleCache<T> implements Cache<T> {
+  private cache: Map<string, { value: T; timestamp: number }> = new Map();
+  private ttl: number; // Time to live in ms
+
+  constructor(ttlMinutes: number = 10) {
+    this.ttl = ttlMinutes * 60 * 1000;
+  }
+
+  get(key: string): T | undefined {
+    const item = this.cache.get(key);
+    
+    if (!item) return undefined;
+    
+    // Check if the item has expired
+    if (Date.now() - item.timestamp > this.ttl) {
+      this.cache.delete(key);
+      return undefined;
+    }
+    
+    return item.value;
+  }
+
+  set(key: string, value: T): void {
+    this.cache.set(key, { value, timestamp: Date.now() });
+  }
+}
+
+// Create caches with different TTLs
+const newsCache = new SimpleCache<NewsApiResponse>(5); // 5 minutes for news lists
+const articleCache = new SimpleCache<NewsArticle>(30); // 30 minutes for individual articles
 
 interface FetchNewsParams {
   category?: string;
@@ -199,39 +238,3 @@ function transformNewsDataArticle(article: any): NewsArticle {
   };
 }
 
-// Simple in-memory cache implementation
-interface Cache<T> {
-  get(key: string): T | undefined;
-  set(key: string, value: T): void;
-}
-
-class SimpleCache<T> implements Cache<T> {
-  private cache: Map<string, { value: T; timestamp: number }> = new Map();
-  private ttl: number; // Time to live in ms
-
-  constructor(ttlMinutes: number = 10) {
-    this.ttl = ttlMinutes * 60 * 1000;
-  }
-
-  get(key: string): T | undefined {
-    const item = this.cache.get(key);
-    
-    if (!item) return undefined;
-    
-    // Check if the item has expired
-    if (Date.now() - item.timestamp > this.ttl) {
-      this.cache.delete(key);
-      return undefined;
-    }
-    
-    return item.value;
-  }
-
-  set(key: string, value: T): void {
-    this.cache.set(key, { value, timestamp: Date.now() });
-  }
-}
-
-// Create caches with different TTLs
-const newsCache = new SimpleCache<NewsApiResponse>(5); // 5 minutes for news lists
-const articleCache = new SimpleCache<NewsArticle>(30); // 30 minutes for individual articles

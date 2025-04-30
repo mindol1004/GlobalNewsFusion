@@ -81,24 +81,8 @@ export default function Header({
               )}
             </Button>
 
-            {/* 임시 로그아웃 버튼 - 테스트용 */}
-            <Button 
-              variant="destructive" 
-              size="sm"
-              onClick={onLogoutClick}
-            >
-              Force Logout
-            </Button>
-
-            {/* 디버깅 정보 */}
-            <div className="text-xs">
-              {isLoading ? "Loading..." : (user ? "Logged In" : "Logged Out")}
-            </div>
-
-            {/* 인증 상태에 따른 버튼 표시 */}
-            {isLoading ? (
-              <div className="h-10 w-10 rounded-full bg-neutral-200 dark:bg-neutral-700 animate-pulse"></div>
-            ) : user ? (
+            {/* 항상 로그인/로그아웃 버튼 표시 - 인증 상태에 따라 달라짐 */}
+            {user ? (
               <div className="flex items-center space-x-4">
                 <Link href="/bookmarks">
                   <Button variant="ghost" size="sm">

@@ -14,8 +14,8 @@ export function useBookmarks() {
     isLoading,
     error,
   } = useQuery({
-    queryKey: ["/api/bookmarks"],
-    enabled: isAuthenticated,
+    queryKey: ["/api/bookmarks", isAuthenticated],
+    enabled: !!isAuthenticated,
     placeholderData: [],
   });
   

@@ -1,20 +1,21 @@
 import { useLocation } from "wouter";
+import { useAuthContext } from "../contexts/AuthContext";
 
 /**
  * Simple utility function to check if a user is authenticated
- * using the presence of an auth token in localStorage
+ * using Firebase auth state
  */
 export function isUserAuthenticated(): boolean {
-  return localStorage.getItem("authToken") !== null;
+  const authContext = useAuthContext();
+  return authContext.isAuthenticated;
 }
 
 /**
- * Simple utility to sign out a user by removing their auth token
- * and redirecting to the home page
+ * Simple utility to sign out a user
  */
 export function signOutUser() {
-  localStorage.removeItem("authToken");
-  window.location.href = "/";
+  const authContext = useAuthContext();
+  authContext.signOut();
 }
 
 /**
@@ -23,9 +24,10 @@ export function signOutUser() {
  */
 export function useRequireAuth(): boolean {
   const [, setLocation] = useLocation();
-  const isAuthenticated = isUserAuthenticated();
+  const { isAuthenticated } = useAuthContext();
 
   if (!isAuthenticated) {
+    console.log("User not authenticated, redirecting to home");
     setLocation("/");
     return false;
   }

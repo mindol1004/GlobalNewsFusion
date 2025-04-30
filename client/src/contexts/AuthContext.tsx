@@ -29,20 +29,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<User | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
-  const [refreshNeeded, setRefreshNeeded] = useState(false);
   
   console.log("AuthProvider initializing");
-  
-  // Check for auth token on mount
-  useEffect(() => {
-    const token = localStorage.getItem("authToken");
-    if (token) {
-      console.log("Found token in storage, user should be authenticated");
-      // We have a token, but we'll wait for Firebase auth state to confirm
-    } else {
-      console.log("No token found in storage");
-    }
-  }, []);
   
   useEffect(() => {
     console.log("Setting up auth state listener");
@@ -63,11 +51,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (user) {
         try {
-          // Get the user's token for authentication with our backend
-          const token = await user.getIdToken(true); // Force token refresh
-          
-          // Store the token in localStorage for later use
-          localStorage.setItem("authToken", token);
+          // Firebase persistence should be set to LOCAL in firebase.ts
+          console.log("Firebase persistence set to LOCAL");
           
           try {
             // Create or update user in our backend if needed
@@ -91,11 +76,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             // Continue without profile if api fails
           }
         } catch (error) {
-          console.error("Error getting auth token:", error);
+          console.error("Error during auth setup:", error);
         }
       } else {
         // Clear auth data when user is null
-        localStorage.removeItem("authToken");
         setUserProfile(null);
       }
       
@@ -121,7 +105,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       unsubscribe();
       clearTimeout(initTimeout);
     };
-  }, []); // Removed auth from dependency array
+  }, []); 
   
   const signOut = async () => {
     console.log("AuthContext: Signing out user");
@@ -129,8 +113,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Sign out from Firebase
       await firebaseSignOut(firebaseAuth);
       
-      // Clear local storage and state
-      localStorage.removeItem("authToken");
+      // Clear state
       setCurrentUser(null);
       setUserProfile(null);
       
@@ -140,7 +123,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch (error) {
       console.error("Error signing out:", error);
       // Fallback if Firebase signout fails
-      localStorage.removeItem("authToken");
       setCurrentUser(null);
       setUserProfile(null);
       window.location.href = "/";

@@ -1,15 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { addBookmark, removeBookmark, fetchBookmarks } from "../lib/api";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuth } from "../hooks/useAuth";
 import { useToast } from "./use-toast";
 import { NewsArticle } from "@shared/schema";
 
 export function useBookmarks() {
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  
-  const isAuthenticated = !!user;
   
   const {
     data: bookmarks = [],

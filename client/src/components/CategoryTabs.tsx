@@ -11,13 +11,13 @@ export default function CategoryTabs({ activeCategory }: CategoryTabsProps) {
       <div className="flex space-x-1 min-w-full">
         {CATEGORIES.map((category) => (
           <Link key={category.id} href={category.id === 'general' ? '/' : `/category/${category.slug}`}>
-            <a className={`px-4 py-2 font-medium whitespace-nowrap ${
+            <div className={`px-4 py-2 font-medium whitespace-nowrap cursor-pointer ${
               activeCategory === category.slug
                 ? "text-primary border-b-2 border-primary"
                 : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
             }`}>
               {category.name}
-            </a>
+            </div>
           </Link>
         ))}
       </div>

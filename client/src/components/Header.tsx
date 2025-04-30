@@ -40,11 +40,9 @@ export default function Header({ onLoginClick, onSignupClick }: HeaderProps) {
         <div className="flex items-center justify-between h-16">
           <div className="flex items-center">
             <Link href="/">
-              <a className="flex items-center">
-                <span className="text-2xl font-bold text-primary">
-                  GlobalNews
-                </span>
-              </a>
+              <span className="text-2xl font-bold text-primary cursor-pointer">
+                GlobalNews
+              </span>
             </Link>
           </div>
 

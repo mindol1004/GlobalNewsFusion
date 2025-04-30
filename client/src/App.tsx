@@ -13,7 +13,7 @@ import Search from "@/pages/Search";
 import { useAuth } from "./hooks/useAuth";
 import LoginModal from "./components/Auth/LoginModal";
 import SignupModal from "./components/Auth/SignupModal";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -30,9 +30,15 @@ function Router() {
 }
 
 function App() {
-  const { isInitializing } = useAuth();
+  const { isInitializing, isAuthenticated } = useAuth();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  // This will force a re-render when auth state changes
+  useEffect(() => {
+    setRefreshKey(prev => prev + 1);
+  }, [isAuthenticated]);
 
   console.log("App component rendering, isInitializing:", isInitializing);
 

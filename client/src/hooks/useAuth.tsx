@@ -37,9 +37,6 @@ export function useAuth() {
         await updateProfile(result.user, { displayName });
         
         try {
-          // Get the token for the newly created user
-          const token = await result.user.getIdToken();
-          
           // Create user profile in our backend
           await apiRequest("POST", "/api/user/register", {
             email,
@@ -48,14 +45,18 @@ export function useAuth() {
             username: email.split('@')[0], // Use part of email as username
           });
           
-          // Store auth token for subsequent requests
-          localStorage.setItem("authToken", token);
-          
-          // Force refresh the page to update authentication state
-          window.location.reload();
+          toast({
+            title: "Account created",
+            description: `Welcome to GlobalNews, ${displayName}!`,
+          });
         } catch (apiError) {
           console.error("Error registering user with backend:", apiError);
           // Continue anyway since Firebase auth succeeded
+          toast({
+            title: "Account created",
+            description: "Your account was created but profile setup is incomplete. Some features may be limited.",
+            variant: "destructive",
+          });
         }
       }
       
@@ -81,12 +82,6 @@ export function useAuth() {
       // Handle successful login
       if (result.user) {
         try {
-          // Get the token for the authenticated user
-          const token = await result.user.getIdToken(true); // Force refresh
-          
-          // Store auth token for subsequent requests
-          localStorage.setItem("authToken", token);
-          
           // Register user in backend to make sure profile is created
           try {
             await apiRequest("POST", "/api/user/register", {
@@ -113,11 +108,6 @@ export function useAuth() {
               description: "You are now logged in with limited functionality",
             });
           }
-          
-          // Force refresh the page to update authentication state after a short delay
-          setTimeout(() => {
-            window.location.reload();
-          }, 1000);
         } catch (tokenError) {
           console.error("Error getting user token:", tokenError);
           toast({
@@ -148,9 +138,6 @@ export function useAuth() {
       // Create or update user profile in our backend
       if (result.user) {
         try {
-          // Get the token for the authenticated user
-          const token = await result.user.getIdToken();
-          
           // Create or update user profile in our backend
           await apiRequest("POST", "/api/user/register", {
             email: result.user.email,
@@ -160,18 +147,10 @@ export function useAuth() {
             username: result.user.email?.split('@')[0] || `user_${Date.now()}`, // Use part of email as username
           });
           
-          // Store auth token for subsequent requests
-          localStorage.setItem("authToken", token);
-          
           toast({
             title: "Login successful",
             description: "You are now logged in with Google",
           });
-          
-          // Force refresh the page to update authentication state
-          setTimeout(() => {
-            window.location.reload();
-          }, 1000);
         } catch (apiError) {
           console.error("Error creating user profile:", apiError);
           // Continue anyway since Firebase auth succeeded

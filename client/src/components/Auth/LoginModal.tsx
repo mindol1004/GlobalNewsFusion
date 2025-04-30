@@ -37,11 +37,6 @@ export default function LoginModal({ isOpen, onClose, onSignupClick }: LoginModa
       
       // Login success is handled in the useAuth hook with toasts
       onClose();
-      
-      // Force a page refresh after a short delay to ensure the auth state is updated
-      setTimeout(() => {
-        window.location.reload();
-      }, 500);
     } catch (error) {
       console.error("Login error in modal:", error);
       // Error is handled in the useAuth hook

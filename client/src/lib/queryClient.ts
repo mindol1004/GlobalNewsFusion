@@ -17,7 +17,12 @@ export async function apiRequest(
   // 토큰이 제공되지 않으면 getCurrentUserToken에서 가져옵니다
   let authToken = token;
   if (!authToken) {
-    authToken = await getCurrentUserToken();
+    try {
+      authToken = await getCurrentUserToken() || undefined;
+    } catch (error) {
+      console.error("Token retrieval error:", error);
+      authToken = undefined;
+    }
   }
   
   // 헤더 설정
@@ -61,7 +66,15 @@ export const getQueryFn: <T>(options: {
     const url = typeof queryKey[0] === "string" ? queryKey[0] : "";
     
     try {
-      const token = await getCurrentUserToken();
+      let token: string | undefined;
+      try {
+        const fetchedToken = await getCurrentUserToken();
+        token = fetchedToken || undefined;
+      } catch (error) {
+        console.error("Token retrieval error in getQueryFn:", error);
+        token = undefined;
+      }
+      
       const res = await apiRequest("GET", url, undefined, token);
       
       return res.json();

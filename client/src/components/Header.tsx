@@ -31,6 +31,9 @@ export default function Header({
     ? location.replace("/category/", "") 
     : "";
 
+  // 디버깅용 로그
+  console.log("Header rendering:", { user, isLoading });
+
   return (
     <header className="bg-white dark:bg-neutral-800 shadow-sm sticky top-0 z-50">
       <div className="container mx-auto px-4">
@@ -78,6 +81,21 @@ export default function Header({
               )}
             </Button>
 
+            {/* 임시 로그아웃 버튼 - 테스트용 */}
+            <Button 
+              variant="destructive" 
+              size="sm"
+              onClick={onLogoutClick}
+            >
+              Force Logout
+            </Button>
+
+            {/* 디버깅 정보 */}
+            <div className="text-xs">
+              {isLoading ? "Loading..." : (user ? "Logged In" : "Logged Out")}
+            </div>
+
+            {/* 인증 상태에 따른 버튼 표시 */}
             {isLoading ? (
               <div className="h-10 w-10 rounded-full bg-neutral-200 dark:bg-neutral-700 animate-pulse"></div>
             ) : user ? (
@@ -89,13 +107,12 @@ export default function Header({
                 </Link>
                 <Link href="/profile">
                   <Button variant="ghost" size="icon" className="rounded-full">
-                    {user.photoURL ? (
-                      <img src={user.photoURL} alt="Profile" className="w-10 h-10 rounded-full" />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center">
-                        {user.displayName?.charAt(0) || user.email?.charAt(0) || 'U'}
-                      </div>
-                    )}
+                    <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center">
+                      {(user.displayName && typeof user.displayName === 'string') ? 
+                        user.displayName.charAt(0) : 
+                        ((user.email && typeof user.email === 'string') ? 
+                          user.email.charAt(0) : 'U')}
+                    </div>
                   </Button>
                 </Link>
                 <Button 

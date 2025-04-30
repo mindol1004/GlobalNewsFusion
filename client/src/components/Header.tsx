@@ -3,6 +3,7 @@ import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { User } from "@shared/schema";
 import { CATEGORIES } from "../types";
+import UserProfileDropdown from "./UserProfileDropdown";
 
 interface HeaderProps {
   user: any | null;  // Firebase User 객체 또는 서버의 User 객체
@@ -81,30 +82,10 @@ export default function Header({
               )}
             </Button>
 
-            {/* 항상 로그인/로그아웃 버튼 표시 - 인증 상태에 따라 달라짐 */}
+            {/* 로그인/로그아웃 버튼 표시 - 인증 상태에 따라 달라짐 */}
             {user ? (
-              <div className="flex items-center space-x-4">
-                <Link href="/bookmarks">
-                  <Button variant="ghost" size="sm">
-                    Saved
-                  </Button>
-                </Link>
-                <Link href="/profile">
-                  <Button variant="ghost" size="icon" className="rounded-full">
-                    <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center">
-                      {(user.displayName && typeof user.displayName === 'string') ? 
-                        user.displayName.charAt(0) : 
-                        ((user.email && typeof user.email === 'string') ? 
-                          user.email.charAt(0) : 'U')}
-                    </div>
-                  </Button>
-                </Link>
-                <Button 
-                  variant="ghost" 
-                  onClick={onLogoutClick}
-                >
-                  Logout
-                </Button>
+              <div className="flex items-center space-x-2">
+                <UserProfileDropdown user={user} onLogoutClick={onLogoutClick} />
               </div>
             ) : (
               <div className="flex items-center space-x-2">

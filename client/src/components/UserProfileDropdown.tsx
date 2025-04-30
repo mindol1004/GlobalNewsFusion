@@ -1,28 +1,16 @@
 import { useState, useRef, useEffect } from "react";
-import { Link, useLocation } from "wouter";
-import { useAuth } from "../hooks/useAuth";
-import { User } from "@shared/schema";
-import { signOutUser } from "../lib/auth-fixes";
-import { useToast } from "@/hooks/use-toast";
+import { Link } from "wouter";
+import { User as FirebaseUser } from "firebase/auth";
+import { Button } from "@/components/ui/button";
 
 interface UserProfileDropdownProps {
-  user: User | null;
+  user: FirebaseUser;
+  onLogoutClick: () => void;
 }
 
-export default function UserProfileDropdown({ user }: UserProfileDropdownProps) {
+export default function UserProfileDropdown({ user, onLogoutClick }: UserProfileDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const { signOut } = useAuth();
-  const [, navigate] = useLocation();
-  const { toast } = useToast();
-  
-  // Handle case where user is not provided
-  // This can happen during authentication state changes
-  const safeUser = user || { 
-    username: "User", 
-    displayName: "User", 
-    email: "Loading..." 
-  };
   
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -38,93 +26,61 @@ export default function UserProfileDropdown({ user }: UserProfileDropdownProps) 
     };
   }, []);
   
-  // Get user initials for avatar
-  const getInitials = () => {    
-    if (safeUser.displayName) {
-      return safeUser.displayName
-        .split(" ")
-        .map(name => name[0])
-        .join("")
-        .toUpperCase()
-        .substring(0, 2);
+  // Get user initial for avatar
+  const getInitial = () => {
+    if (user.displayName && typeof user.displayName === 'string') {
+      return user.displayName.charAt(0).toUpperCase();
     }
     
-    return safeUser.username.substring(0, 2).toUpperCase();
+    if (user.email && typeof user.email === 'string') {
+      return user.email.charAt(0).toUpperCase();
+    }
+    
+    return 'U';
   };
   
   return (
     <div className="relative" ref={dropdownRef}>
       {/* User profile button */}
-      <div 
-        className="cursor-pointer flex items-center gap-2"
+      <Button
+        variant="ghost"
+        size="icon"
+        className="rounded-full"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <span className="text-sm font-medium hidden sm:inline">
-          {user?.displayName || user?.username}
-        </span>
-        <div className="h-9 w-9 rounded-full bg-primary flex items-center justify-center text-white">
-          <span className="text-sm font-medium">{getInitials()}</span>
+        <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center">
+          {getInitial()}
         </div>
-      </div>
+      </Button>
       
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-56 shadow-apple-lg rounded-lg bg-white dark:bg-neutral-800 dark:shadow-apple-dark-md">
-          <div className="p-3 border-b border-neutral-100 dark:border-neutral-700">
-            <div className="font-medium">{user?.displayName || user?.username}</div>
-            <div className="text-sm text-neutral-500 dark:text-neutral-400">{user?.email}</div>
+        <div className="absolute right-0 mt-2 w-56 shadow-lg rounded-lg bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 z-50">
+          <div className="p-3 border-b border-neutral-200 dark:border-neutral-700">
+            <div className="font-medium">{user.displayName || user.email?.split('@')[0]}</div>
+            <div className="text-sm text-neutral-500 dark:text-neutral-400">{user.email}</div>
           </div>
           <div className="py-1">
             <Link href="/profile">
-              <a className="block px-4 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-700">
-                <i className="fas fa-user mr-2 text-neutral-500"></i> Profile
-              </a>
+              <div className="block px-4 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-700 cursor-pointer">
+                Profile
+              </div>
             </Link>
             <Link href="/bookmarks">
-              <a className="block px-4 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-700">
-                <i className="fas fa-bookmark mr-2 text-neutral-500"></i> Bookmarks
-              </a>
+              <div className="block px-4 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-700 cursor-pointer">
+                Saved Articles
+              </div>
             </Link>
-            <Link href="/profile">
-              <a className="block px-4 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-700">
-                <i className="fas fa-cog mr-2 text-neutral-500"></i> Settings
-              </a>
-            </Link>
-            <div className="border-t border-neutral-100 dark:border-neutral-700 mt-1 pt-1">
-              <button 
-                onClick={async () => {
-                  // Close dropdown first
+            <div className="border-t border-neutral-200 dark:border-neutral-700 mt-1 pt-1">
+              <div 
+                onClick={() => {
                   setIsOpen(false);
-
-                  // Show success toast
-                  toast({
-                    title: "Signing out...",
-                    description: "Please wait...",
-                  });
-                  
-                  // Use the main signOut method from auth context
-                  try {
-                    await signOut();
-                  } catch (error) {
-                    console.error("Error during signOut:", error);
-                    
-                    // Fallback to direct method
-                    console.log("Using fallback signout method");
-                    signOutUser();
-                    
-                    // Show error toast and redirect
-                    toast({
-                      title: "Signed out with warning",
-                      description: "Some errors occurred but you have been signed out.",
-                      variant: "destructive"
-                    });
-                    navigate("/");
-                  }
+                  onLogoutClick();
                 }}
-                className="block w-full text-left px-4 py-2 text-sm text-error hover:bg-neutral-100 dark:hover:bg-neutral-700"
+                className="block px-4 py-2 text-sm text-red-500 hover:bg-neutral-100 dark:hover:bg-neutral-700 cursor-pointer"
               >
-                <i className="fas fa-sign-out-alt mr-2"></i> Log out
-              </button>
+                Logout
+              </div>
             </div>
           </div>
         </div>

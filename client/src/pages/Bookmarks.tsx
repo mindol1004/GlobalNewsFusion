@@ -1,90 +1,60 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useLocation } from "wouter";
 import NewsCard from "../components/NewsCard";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { NewsArticle } from "@shared/schema";
 import { useAuth } from "../hooks/useAuth";
+import { useBookmarks } from "../hooks/useBookmarks";
 
 export default function Bookmarks() {
   const { user, isLoading: authLoading } = useAuth();
   const [, navigate] = useLocation();
   const { toast } = useToast();
-  
-  // Temporary mock data until we fix the backend API
-  const [bookmarks, setBookmarks] = useState<NewsArticle[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-  
-  // Load bookmarks data
-  useEffect(() => {
-    const fetchBookmarks = async () => {
-      if (!user) {
-        setIsLoading(false);
-        return;
-      }
-      
-      try {
-        // Set loading to false after a short delay
-        // In a real implementation, this would fetch data from the API
-        setTimeout(() => {
-          setIsLoading(false);
-        }, 500);
-      } catch (err) {
-        console.error("Error fetching bookmarks:", err);
-        setError(err instanceof Error ? err : new Error("Failed to fetch bookmarks"));
-        setIsLoading(false);
-      }
-    };
-    
-    if (!authLoading) {
-      fetchBookmarks();
-    }
-  }, [user, authLoading]);
-  
+  const { bookmarks, isLoading, error } = useBookmarks();
+
   useEffect(() => {
     // Redirect if not authenticated
     if (!authLoading && !user) {
       navigate("/");
       toast({
-        title: "Authentication required",
-        description: "Please sign in to view your bookmarks.",
+        title: "로그인이 필요합니다",
+        description: "북마크를 보려면 로그인해주세요.",
         variant: "destructive",
       });
     }
-    
+
     // Set document title
-    document.title = "Your Bookmarks - GlobalNews";
+    document.title = "북마크 - GlobalNews";
   }, [navigate, toast, user, authLoading]);
-  
+
   if (authLoading) {
     return (
       <div className="container mx-auto px-4 py-6 flex items-center justify-center min-h-[50vh]">
-        <div className="animate-pulse text-xl">Loading your bookmarks...</div>
+        <div className="animate-pulse text-xl">북마크 불러오는 중...</div>
       </div>
     );
   }
-  
+
   if (!user) {
     return null; // Already redirecting in useEffect
   }
-  
+
   return (
     <div className="container mx-auto px-4 py-6">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold dark:text-white">Your Bookmarks</h1>
+        <h1 className="text-3xl font-bold dark:text-white">북마크</h1>
         {bookmarks?.length > 0 && (
           <Button
             variant="outline"
             className="text-sm"
             onClick={() => navigate("/")}
           >
-            Back to News
+            뉴스 홈으로
           </Button>
         )}
       </div>
-      
+
       {isLoading ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {Array(6).fill(0).map((_, i) => (
@@ -93,10 +63,10 @@ export default function Bookmarks() {
         </div>
       ) : error ? (
         <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm p-8 text-center">
-          <h2 className="text-xl font-bold mb-2 dark:text-white">Error loading bookmarks</h2>
-          <p className="text-neutral-600 dark:text-neutral-400 mb-4">There was an error loading your bookmarks. Please try again later.</p>
+          <h2 className="text-xl font-bold mb-2 dark:text-white">북마크 불러오기 실패</h2>
+          <p className="text-neutral-600 dark:text-neutral-400 mb-4">북마크를 불러오는 중 오류가 발생했습니다. 나중에 다시 시도해주세요.</p>
           <Button onClick={() => navigate("/")}>
-            Go to Homepage
+            홈으로 가기
           </Button>
         </div>
       ) : bookmarks?.length ? (
@@ -107,10 +77,10 @@ export default function Bookmarks() {
         </div>
       ) : (
         <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm p-8 text-center">
-          <h2 className="text-xl font-bold mb-2 dark:text-white">No bookmarks yet</h2>
-          <p className="text-neutral-600 dark:text-neutral-400 mb-4">Start adding articles to your bookmarks to read them later.</p>
+          <h2 className="text-xl font-bold mb-2 dark:text-white">북마크가 없습니다</h2>
+          <p className="text-neutral-600 dark:text-neutral-400 mb-4">관심있는 뉴스를 북마크에 추가해보세요.</p>
           <Button onClick={() => navigate("/")}>
-            Browse News
+            뉴스 둘러보기
           </Button>
         </div>
       )}

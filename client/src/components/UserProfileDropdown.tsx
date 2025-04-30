@@ -1,7 +1,9 @@
 import { useState, useRef, useEffect } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { useAuth } from "../hooks/useAuth";
 import { User } from "@shared/schema";
+import { signOutUser } from "../lib/auth-fixes";
+import { useToast } from "@/hooks/use-toast";
 
 interface UserProfileDropdownProps {
   user: User | null;
@@ -10,7 +12,9 @@ interface UserProfileDropdownProps {
 export default function UserProfileDropdown({ user }: UserProfileDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const { signOut, isAuthenticated } = useAuth();
+  const { signOut } = useAuth();
+  const [, navigate] = useLocation();
+  const { toast } = useToast();
   
   // Handle case where user is not provided
   // This can happen during authentication state changes
@@ -89,8 +93,25 @@ export default function UserProfileDropdown({ user }: UserProfileDropdownProps) 
             <div className="border-t border-neutral-100 dark:border-neutral-700 mt-1 pt-1">
               <button 
                 onClick={() => {
-                  signOut();
+                  // First try to use Firebase signOut
+                  try {
+                    signOut();
+                  } catch (e) {
+                    console.log("Firebase signOut failed, using localStorage fallback");
+                  }
+                  
+                  // Then use our direct localStorage cleanup as backup
+                  signOutUser();
+                  
+                  // Close dropdown and redirect
                   setIsOpen(false);
+                  navigate("/");
+                  
+                  // Show success toast
+                  toast({
+                    title: "Signed out",
+                    description: "You have been signed out successfully.",
+                  });
                 }}
                 className="block w-full text-left px-4 py-2 text-sm text-error hover:bg-neutral-100 dark:hover:bg-neutral-700"
               >

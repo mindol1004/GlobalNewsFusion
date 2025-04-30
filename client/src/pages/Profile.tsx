@@ -118,7 +118,7 @@ export default function Profile() {
     });
   };
   
-  if (!isAuthenticated) {
+  if (!isAuth) {
     return null; // Already redirecting in useEffect
   }
   
@@ -134,11 +134,11 @@ export default function Profile() {
               <CardTitle className="text-xl dark:text-white">
                 <div className="flex items-center gap-4">
                   <div className="h-14 w-14 rounded-full bg-primary flex items-center justify-center text-white text-lg">
-                    {userProfile?.displayName?.charAt(0) || user?.email?.charAt(0) || "U"}
+                    {userProfile?.displayName?.charAt(0) || userProfile?.email?.charAt(0) || "U"}
                   </div>
                   <div>
                     <h2 className="text-xl font-bold">{userProfile?.displayName || "User"}</h2>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">{user?.email}</p>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400">{userProfile?.email}</p>
                   </div>
                 </div>
               </CardTitle>
@@ -157,7 +157,18 @@ export default function Profile() {
                 <Button variant="ghost" className="w-full justify-start text-neutral-700 dark:text-neutral-300">
                   <i className="fas fa-cog mr-2"></i> Account Settings
                 </Button>
-                <Button variant="ghost" className="w-full justify-start text-red-500">
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-start text-red-500"
+                  onClick={() => {
+                    signOutUser();
+                    navigate("/");
+                    toast({
+                      title: "Signed out",
+                      description: "You have been signed out successfully.",
+                    });
+                  }}
+                >
                   <i className="fas fa-sign-out-alt mr-2"></i> Sign Out
                 </Button>
               </div>
@@ -195,7 +206,7 @@ export default function Profile() {
                       <Label htmlFor="email">Email</Label>
                       <Input
                         id="email"
-                        value={user?.email || ""}
+                        value={userProfile?.email || ""}
                         disabled
                         className="mt-1 bg-neutral-50 dark:bg-neutral-700"
                       />

@@ -39,7 +39,7 @@ export function useAuth() {
             displayName,
             firebaseId: result.user.uid,
             username: email.split('@')[0], // Use part of email as username
-          }, token);
+          });
           
           // Store auth token for subsequent requests
           localStorage.setItem("authToken", token);
@@ -68,7 +68,32 @@ export function useAuth() {
   const loginWithEmail = async (email: string, password: string): Promise<UserCredential> => {
     setIsLoading(true);
     try {
-      return await signInWithEmailAndPassword(auth, email, password);
+      const result = await signInWithEmailAndPassword(auth, email, password);
+      
+      // Store token and update UI after successful login
+      if (result.user) {
+        try {
+          // Get the token for the authenticated user
+          const token = await result.user.getIdToken();
+          
+          // Store auth token for subsequent requests
+          localStorage.setItem("authToken", token);
+          
+          toast({
+            title: "Login successful",
+            description: "You are now logged in",
+          });
+          
+          // Force refresh the page to update authentication state
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+        } catch (tokenError) {
+          console.error("Error getting user token:", tokenError);
+        }
+      }
+      
+      return result;
     } catch (error: any) {
       toast({
         title: "Login failed",
@@ -88,12 +113,35 @@ export function useAuth() {
       
       // Create or update user profile in our backend
       if (result.user) {
-        await apiRequest("POST", "/api/user/register", {
-          email: result.user.email,
-          displayName: result.user.displayName,
-          photoURL: result.user.photoURL,
-          firebaseId: result.user.uid,
-        });
+        try {
+          // Get the token for the authenticated user
+          const token = await result.user.getIdToken();
+          
+          // Create or update user profile in our backend
+          await apiRequest("POST", "/api/user/register", {
+            email: result.user.email,
+            displayName: result.user.displayName,
+            photoURL: result.user.photoURL,
+            firebaseId: result.user.uid,
+            username: result.user.email?.split('@')[0] || `user_${Date.now()}`, // Use part of email as username
+          });
+          
+          // Store auth token for subsequent requests
+          localStorage.setItem("authToken", token);
+          
+          toast({
+            title: "Login successful",
+            description: "You are now logged in with Google",
+          });
+          
+          // Force refresh the page to update authentication state
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+        } catch (apiError) {
+          console.error("Error creating user profile:", apiError);
+          // Continue anyway since Firebase auth succeeded
+        }
       }
       
       return result;

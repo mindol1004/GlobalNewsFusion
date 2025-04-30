@@ -23,6 +23,18 @@ console.log("Initializing Firebase with config:", { ...firebaseConfig, apiKey: "
 // Initialize Firebase
 const firebaseApp = initializeApp(firebaseConfig);
 const auth = getAuth(firebaseApp);
+
+// Set persistence to LOCAL to keep user logged in (browser session)
+import { setPersistence, browserLocalPersistence } from "firebase/auth";
+setPersistence(auth, browserLocalPersistence)
+  .then(() => {
+    console.log("Firebase persistence set to LOCAL");
+  })
+  .catch((error) => {
+    console.error("Error setting persistence:", error);
+  });
+
+// Initialize database
 const database = getDatabase(firebaseApp);
 const googleProvider = new GoogleAuthProvider();
 

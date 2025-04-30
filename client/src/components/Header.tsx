@@ -13,7 +13,9 @@ interface HeaderProps {
 }
 
 export default function Header({ onLoginClick, onSignupClick }: HeaderProps) {
-  const { isAuthenticated, userProfile } = useAuth();
+  const { isAuthenticated, userProfile, isInitializing } = useAuth();
+  
+  console.log("Header rendering, auth state:", { isAuthenticated, userProfile, isInitializing });
   const { theme, setTheme } = useTheme();
   const [location] = useLocation();
   

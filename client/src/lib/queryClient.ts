@@ -47,9 +47,16 @@ export const getQueryFn: <T>(options: {
     
     // Build headers
     const headers: Record<string, string> = {};
+    
+    // Add auth token if available
     if (authToken) {
       headers["Authorization"] = `Bearer ${authToken}`;
     }
+    
+    // Add content type for better server handling
+    headers["Content-Type"] = "application/json";
+    
+    console.log(`Making request to ${queryKey[0]} with auth token: ${authToken ? "present" : "not present"}`);
     
     const res = await fetch(queryKey[0] as string, {
       credentials: "include",

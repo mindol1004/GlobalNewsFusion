@@ -17,8 +17,15 @@ import { useToast } from "./use-toast";
 export function useAuth() {
   const [isLoading, setIsLoading] = useState(false);
   const auth = getAuth(firebaseApp);
-  const { currentUser, userProfile, isAuthenticated, isInitializing, signOut } = useAuthContext();
+  const authContext = useAuthContext();
+  const { currentUser, userProfile, isAuthenticated, isInitializing, signOut } = authContext;
   const { toast } = useToast();
+  
+  console.log("useAuth hook called, current state:", {
+    isAuthenticated,
+    userProfile: userProfile ? "exists" : "null",
+    isInitializing
+  });
   
   const registerWithEmail = async (email: string, password: string, displayName: string): Promise<UserCredential> => {
     setIsLoading(true);

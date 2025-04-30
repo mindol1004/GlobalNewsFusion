@@ -52,15 +52,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (user) {
         try {
           // Get the user's token for authentication with our backend
-          const token = await user.getIdToken();
+          const token = await user.getIdToken(true); // Force token refresh
           
           // Store the token in localStorage for later use
           localStorage.setItem("authToken", token);
           
           try {
-            // Fetch user profile from our backend
+            // Create or update user in our backend if needed
+            await apiRequest("POST", "/api/user/register", {
+              email: user.email,
+              displayName: user.displayName,
+              photoURL: user.photoURL,
+              firebaseId: user.uid,
+              username: user.email?.split('@')[0] || `user_${Date.now()}`,
+            });
+            
+            console.log("User registered or updated in backend");
+            
+            // Now fetch user profile from our backend
             const response = await apiRequest("GET", "/api/user/profile");
             const profile = await response.json();
+            console.log("Profile fetched:", profile);
             setUserProfile(profile);
           } catch (profileError) {
             console.error("Error fetching user profile:", profileError);
@@ -70,6 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.error("Error getting auth token:", error);
         }
       } else {
+        // Clear auth data when user is null
         localStorage.removeItem("authToken");
         setUserProfile(null);
       }

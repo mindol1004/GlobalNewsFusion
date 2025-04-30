@@ -32,13 +32,18 @@ export default function LoginModal({ isOpen, onClose, onSignupClick }: LoginModa
     }
     
     try {
+      console.log("Attempting login with email:", email);
       await loginWithEmail(email, password);
-      toast({
-        title: "Login successful",
-        description: "Welcome back!"
-      });
+      
+      // Login success is handled in the useAuth hook with toasts
       onClose();
+      
+      // Force a page refresh after a short delay to ensure the auth state is updated
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     } catch (error) {
+      console.error("Login error in modal:", error);
       // Error is handled in the useAuth hook
     }
   };

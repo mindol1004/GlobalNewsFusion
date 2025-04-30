@@ -79,7 +79,11 @@ export async function fetchNews(params: FetchNewsParams = {}): Promise<NewsApiRe
       queryParams.apikey = NEWSDATA_IO_KEY as string;
       queryParams.language = language;
       queryParams.size = pageSize;
-      queryParams.page = page;
+      // NewsData.io doesn't use numeric page parameter, only next_page_id
+      // So we only add it if it's not the first page and if it's a string
+      if (typeof page === 'string' && page !== '1') {
+        queryParams.page = page;
+      }
       
       if (query) queryParams.q = query;
       if (category) queryParams.category = category;

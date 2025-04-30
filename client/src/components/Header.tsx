@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { User } from "@shared/schema";
 import { CATEGORIES } from "../types";
 import UserProfileDropdown from "./UserProfileDropdown";
+import { useTranslation } from '../hooks/useTranslation';
 
 interface HeaderProps {
   user: any | null;  // Firebase User 객체 또는 서버의 User 객체
@@ -22,6 +23,7 @@ export default function Header({
 }: HeaderProps) {
   const { theme, setTheme } = useTheme();
   const [location] = useLocation();
+  const { t } = useTranslation();
   
   const toggleTheme = () => {
     setTheme(theme === "dark" ? "light" : "dark");
@@ -52,7 +54,7 @@ export default function Header({
               <div className="relative">
                 <input
                   type="text"
-                  placeholder="Search news..."
+                  placeholder={t("Search news...", "뉴스 검색...")}
                   className="w-full px-4 py-2 rounded-full bg-neutral-100 dark:bg-neutral-700 focus:outline-none"
                 />
                 <button className="absolute right-3 top-2">
@@ -94,13 +96,13 @@ export default function Header({
                   onClick={onLoginClick}
                   className="text-neutral-700 dark:text-neutral-300"
                 >
-                  Login
+                  {t("Login", "로그인")}
                 </Button>
                 <Button 
                   onClick={onSignupClick}
                   className="bg-primary hover:bg-primary/90"
                 >
-                  Sign Up
+                  {t("Sign Up", "회원가입")}
                 </Button>
               </div>
             )}

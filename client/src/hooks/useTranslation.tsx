@@ -1,45 +1,42 @@
-import { useState } from "react";
-import { translateText } from "../lib/api";
-import { useAuth } from "./useAuth";
-import { useToast } from "./use-toast";
+import { useTranslationContext } from '../contexts/TranslationContext';
 
+// 다국어 UI 텍스트를 위한 번역 훅
+// UI 요소에서 직접 사용할 수 있는 간단한 인터페이스를 제공합니다
 export function useTranslation() {
-  const [isTranslating, setIsTranslating] = useState(false);
-  const { userProfile } = useAuth();
-  const { toast } = useToast();
-  
-  const translate = async (text: string, targetLanguage?: string, sourceLanguage?: string): Promise<string> => {
-    if (!text) return "";
-    
-    const userLanguage = targetLanguage || userProfile?.preferredLanguage || navigator.language.split('-')[0] || "en";
-    
-    // Don't translate if the text is already in the target language
-    if (sourceLanguage && sourceLanguage === userLanguage) {
-      return text;
-    }
-    
-    setIsTranslating(true);
-    try {
-      const translated = await translateText({
-        text,
-        targetLanguage: userLanguage,
-        sourceLanguage,
-      });
-      return translated;
-    } catch (error: any) {
-      toast({
-        title: "Translation failed",
-        description: error.message,
-        variant: "destructive",
-      });
-      return text; // Return original text on error
-    } finally {
-      setIsTranslating(false);
+  const { translateText, userLanguage } = useTranslationContext();
+
+  // 언어 코드에 따라 다른 텍스트를 반환하는 함수
+  const t = (en: string, ko: string): string => {
+    if (userLanguage === 'ko') return ko;
+    // 영어가 기본값
+    return en;
+  };
+
+  // 번역 함수
+  const translate = async (text: string, targetLang?: string, sourceLang?: string): Promise<string> => {
+    return translateText(text, sourceLang);
+  };
+
+  // 언어 코드를 사람이 읽을 수 있는 이름으로 변환
+  const getLanguageName = (code: string): string => {
+    switch (code) {
+      case 'ko': return '한국어';
+      case 'en': return 'English';
+      case 'ja': return '日本語';
+      case 'zh': return '中文';
+      case 'es': return 'Español';
+      case 'fr': return 'Français';
+      case 'de': return 'Deutsch';
+      case 'ru': return 'Русский';
+      default: return code;
     }
   };
-  
-  return {
-    translate,
-    isTranslating,
+
+  return { 
+    t, 
+    translate, 
+    isTranslating: false, 
+    getLanguageName,
+    currentLanguage: userLanguage
   };
 }

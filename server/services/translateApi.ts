@@ -1,7 +1,7 @@
 import axios from "axios";
 
-// LibreTranslate API base URL
-const API_URL = process.env.LIBRE_TRANSLATE_URL || "https://libretranslate.com/translate";
+// LibreTranslate API base URL - 사용자가 제공한 API 주소 사용
+const API_URL = process.env.LIBRE_TRANSLATE_URL || "http://mindol.synology.me:5000/translate";
 const API_KEY = process.env.LIBRE_TRANSLATE_API_KEY;
 
 interface TranslateParams {

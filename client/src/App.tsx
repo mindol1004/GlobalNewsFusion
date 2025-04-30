@@ -16,6 +16,7 @@ import { useState, useEffect } from "react";
 import { loginWithEmail, loginWithGoogle, registerWithEmail, logout } from "./lib/auth-helpers";
 import { useToast } from "./hooks/use-toast";
 import { useAuth } from "./hooks/useAuth";
+import { TranslationProvider } from "./contexts/TranslationContext";
 
 function Router() {
   const { user } = useAuth();
@@ -125,37 +126,39 @@ function App() {
 
   return (
     <TooltipProvider>
-      <div className="min-h-screen flex flex-col bg-neutral-50 text-neutral-900 dark:bg-neutral-900 dark:text-neutral-50">
-        <Header 
-          user={user}
-          isLoading={isLoading}
-          onLoginClick={() => setIsLoginModalOpen(true)}
-          onSignupClick={() => setIsSignupModalOpen(true)}
-          onLogoutClick={handleLogout}
-        />
-        <main className="flex-grow">
-          <Router />
-        </main>
-        <Footer />
-        <MobileNavigation />
-        <Toaster />
-        
-        {/* 로그인 모달 */}
-        <LoginModal
-          isOpen={isLoginModalOpen}
-          onClose={() => setIsLoginModalOpen(false)}
-          onLogin={handleLogin}
-          onGoogleLogin={handleGoogleLogin}
-        />
-        
-        {/* 회원가입 모달 */}
-        <SignupModal
-          isOpen={isSignupModalOpen}
-          onClose={() => setIsSignupModalOpen(false)}
-          onSignup={handleRegister}
-          onGoogleLogin={handleGoogleLogin}
-        />
-      </div>
+      <TranslationProvider>
+        <div className="min-h-screen flex flex-col bg-neutral-50 text-neutral-900 dark:bg-neutral-900 dark:text-neutral-50">
+          <Header 
+            user={user}
+            isLoading={isLoading}
+            onLoginClick={() => setIsLoginModalOpen(true)}
+            onSignupClick={() => setIsSignupModalOpen(true)}
+            onLogoutClick={handleLogout}
+          />
+          <main className="flex-grow">
+            <Router />
+          </main>
+          <Footer />
+          <MobileNavigation />
+          <Toaster />
+          
+          {/* 로그인 모달 */}
+          <LoginModal
+            isOpen={isLoginModalOpen}
+            onClose={() => setIsLoginModalOpen(false)}
+            onLogin={handleLogin}
+            onGoogleLogin={handleGoogleLogin}
+          />
+          
+          {/* 회원가입 모달 */}
+          <SignupModal
+            isOpen={isSignupModalOpen}
+            onClose={() => setIsSignupModalOpen(false)}
+            onSignup={handleRegister}
+            onGoogleLogin={handleGoogleLogin}
+          />
+        </div>
+      </TranslationProvider>
     </TooltipProvider>
   );
 }

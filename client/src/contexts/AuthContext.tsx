@@ -150,7 +150,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const value = {
     currentUser,
     userProfile,
-    isAuthenticated: !!currentUser || !!localStorage.getItem("authToken"),
+    isAuthenticated: !!currentUser,
     isInitializing,
     signOut,
   };

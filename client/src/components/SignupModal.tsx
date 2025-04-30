@@ -10,6 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useTranslation } from "../hooks/useTranslation";
 
 interface SignupModalProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ export default function SignupModal({ isOpen, onClose, onSignup, onGoogleLogin }
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const { t } = useTranslation();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,19 +46,19 @@ export default function SignupModal({ isOpen, onClose, onSignup, onGoogleLogin }
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>회원가입</DialogTitle>
+          <DialogTitle>{t("Sign Up", "회원가입")}</DialogTitle>
           <DialogDescription>
-            계정을 만들어 개인화된 뉴스 경험을 시작하세요.
+            {t("Create an account to start your personalized news experience.", "계정을 만들어 개인화된 뉴스 경험을 시작하세요.")}
           </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4 py-4">
           <div className="space-y-2">
-            <Label htmlFor="displayName">이름</Label>
+            <Label htmlFor="displayName">{t("Name", "이름")}</Label>
             <Input
               id="displayName"
               type="text"
-              placeholder="홍길동"
+              placeholder={t("John Doe", "홍길동")}
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               required
@@ -64,7 +66,7 @@ export default function SignupModal({ isOpen, onClose, onSignup, onGoogleLogin }
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="email">이메일</Label>
+            <Label htmlFor="email">{t("Email", "이메일")}</Label>
             <Input
               id="email"
               type="email"
@@ -76,7 +78,7 @@ export default function SignupModal({ isOpen, onClose, onSignup, onGoogleLogin }
           </div>
           
           <div className="space-y-2">
-            <Label htmlFor="password">비밀번호</Label>
+            <Label htmlFor="password">{t("Password", "비밀번호")}</Label>
             <Input
               id="password"
               type="password"
@@ -86,7 +88,7 @@ export default function SignupModal({ isOpen, onClose, onSignup, onGoogleLogin }
               minLength={6}
             />
             <p className="text-xs text-neutral-500 dark:text-neutral-400">
-              비밀번호는 최소 6자 이상이어야 합니다.
+              {t("Password must be at least 6 characters long.", "비밀번호는 최소 6자 이상이어야 합니다.")}
             </p>
           </div>
           

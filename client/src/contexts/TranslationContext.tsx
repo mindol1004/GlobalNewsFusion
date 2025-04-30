@@ -1,13 +1,28 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { useAuth } from '../hooks/useAuth';
-import { translateText } from '../lib/api';
+import { translateText as apiTranslateText } from '../lib/api';
 import { NewsArticle } from '@shared/schema';
 import { useToast } from '@/hooks/use-toast';
+
+// 지원되는 언어 목록 정의
+export const supportedLanguages = [
+  { code: 'ko', name: '한국어' },
+  { code: 'en', name: 'English' },
+  { code: 'ja', name: '日本語' },
+  { code: 'zh', name: '中文' },
+  { code: 'es', name: 'Español' },
+  { code: 'fr', name: 'Français' },
+  { code: 'de', name: 'Deutsch' },
+  { code: 'ru', name: 'Русский' }
+];
 
 interface TranslationContextType {
   translateNewsArticle: (article: NewsArticle) => Promise<NewsArticle>;
   isTranslating: boolean;
   userLanguage: string;
+  setUserLanguage: (language: string) => void;
+  translateText: (text: string, sourceLanguage?: string) => Promise<string>;
+  supportedLanguages: typeof supportedLanguages;
 }
 
 const TranslationContext = createContext<TranslationContextType | null>(null);
@@ -28,8 +43,12 @@ export function TranslationProvider({ children }: TranslationProviderProps) {
 
   // 사용자 언어 감지 및 설정
   useEffect(() => {
-    // 사용자 프로필에서 우선 언어 가져오기, 없으면 브라우저 언어 사용
-    const detectedLanguage = userProfile?.preferredLanguage || 
+    // 로컬 스토리지에서 저장된 언어 설정 확인
+    const savedLanguage = localStorage.getItem('userLanguage');
+    
+    // 사용자 프로필, 로컬 스토리지, 브라우저 언어 순으로 우선순위 적용
+    const detectedLanguage = savedLanguage || 
+                            userProfile?.preferredLanguage || 
                             navigator.language.split('-')[0] || 
                             'en';
     
@@ -85,7 +104,7 @@ export function TranslationProvider({ children }: TranslationProviderProps) {
     }
 
     try {
-      const translated = await translateText({
+      const translated = await apiTranslateText({
         text,
         targetLanguage: userLanguage,
         sourceLanguage,
@@ -144,10 +163,43 @@ export function TranslationProvider({ children }: TranslationProviderProps) {
     }
   };
 
+  // 일반 텍스트 번역 함수 (UI 요소 번역에 사용)
+  const translateText = async (text: string, sourceLanguage: string = 'en'): Promise<string> => {
+    return translateSingleText(text, sourceLanguage);
+  };
+
+  // 사용자 언어 변경 함수
+  const handleSetUserLanguage = (language: string) => {
+    setUserLanguage(language);
+    
+    // 로컬 스토리지에 사용자 언어 설정 저장
+    localStorage.setItem('userLanguage', language);
+    
+    // 사용자가 로그인한 경우 서버에 업데이트
+    if (userProfile) {
+      try {
+        fetch('/api/user/preferences', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            preferredLanguage: language
+          })
+        });
+      } catch (error) {
+        console.error('Failed to update user language preference:', error);
+      }
+    }
+  };
+
   const value = {
     translateNewsArticle,
     isTranslating,
-    userLanguage
+    userLanguage,
+    setUserLanguage: handleSetUserLanguage,
+    translateText,
+    supportedLanguages
   };
 
   return (

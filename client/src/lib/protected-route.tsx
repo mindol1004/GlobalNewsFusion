@@ -1,6 +1,8 @@
 import { useAuth } from "@/hooks/useAuth";
 import { Loader2 } from "lucide-react";
 import { Redirect, Route } from "wouter";
+import { useToast } from "@/hooks/use-toast";
+import { useEffect, useState } from "react";
 
 // Define props for the protected route
 interface ProtectedRouteProps {
@@ -12,10 +14,26 @@ export function ProtectedRoute({
   path,
   component: Component,
 }: ProtectedRouteProps) {
-  // Just create a wrapper component that contains all our logic
+  // Create a wrapper component that contains all our logic
   const ProtectedWrapper = () => {
     const { isAuthenticated, isInitializing } = useAuth();
-    const hasToken = localStorage.getItem("authToken") !== null;
+    const { toast } = useToast();
+    const [isRedirecting, setIsRedirecting] = useState(false);
+    
+    // Check authentication and redirect if needed
+    useEffect(() => {
+      if (!isInitializing && !isAuthenticated) {
+        console.log("User not authenticated, redirecting to home");
+        
+        toast({
+          title: "Authentication required",
+          description: "Please sign in to view this page.",
+          variant: "destructive",
+        });
+        
+        setIsRedirecting(true);
+      }
+    }, [isInitializing, isAuthenticated, toast]);
     
     // Show loading spinner while checking authentication
     if (isInitializing) {
@@ -26,9 +44,8 @@ export function ProtectedRoute({
       );
     }
     
-    // Check if user is authenticated or has a token
-    if (!isAuthenticated && !hasToken) {
-      console.log("User not authenticated, redirecting to home");
+    // Redirect if not authenticated
+    if (!isAuthenticated || isRedirecting) {
       return <Redirect to="/" />;
     }
     

@@ -22,12 +22,12 @@ export default function Home() {
     },
   });
   
-  // Top stories
+  // Top stories (different from featured with a different category)
   const { data: topStories, isLoading: isTopStoriesLoading, error: topStoriesError } = useQuery({
-    queryKey: ["/api/news", { pageSize: 6 }],
+    queryKey: ["/api/news", { category: "business", pageSize: 6 }],
     queryFn: () => {
       console.log("Fetching top stories");
-      return fetchNews({ pageSize: 6 });
+      return fetchNews({ category: "business", pageSize: 6 });
     },
   });
   
@@ -107,9 +107,16 @@ export default function Home() {
               <Skeleton key={i} className="h-72 rounded-xl" />
             ))
           ) : topStories?.articles?.length ? (
-            topStories.articles.slice(0, 3).map((article) => (
-              <NewsCard key={article.id} article={article} />
-            ))
+            // Filter out articles already in featured news
+            topStories.articles
+              .filter(article => 
+                !featuredNews?.articles || 
+                !featuredNews.articles.some(featured => featured.id === article.id)
+              )
+              .slice(0, 3)
+              .map((article) => (
+                <NewsCard key={article.id} article={article} />
+              ))
           ) : (
             <div className="col-span-3 p-8 bg-white dark:bg-neutral-800 rounded-xl text-center">
               <h3 className="text-xl font-bold mb-2">No stories available</h3>

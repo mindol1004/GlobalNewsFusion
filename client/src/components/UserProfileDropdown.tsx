@@ -92,26 +92,34 @@ export default function UserProfileDropdown({ user }: UserProfileDropdownProps) 
             </Link>
             <div className="border-t border-neutral-100 dark:border-neutral-700 mt-1 pt-1">
               <button 
-                onClick={() => {
-                  // First try to use Firebase signOut
-                  try {
-                    signOut();
-                  } catch (e) {
-                    console.log("Firebase signOut failed, using localStorage fallback");
-                  }
-                  
-                  // Then use our direct localStorage cleanup as backup
-                  signOutUser();
-                  
-                  // Close dropdown and redirect
+                onClick={async () => {
+                  // Close dropdown first
                   setIsOpen(false);
-                  navigate("/");
-                  
+
                   // Show success toast
                   toast({
-                    title: "Signed out",
-                    description: "You have been signed out successfully.",
+                    title: "Signing out...",
+                    description: "Please wait...",
                   });
+                  
+                  // Use the main signOut method from auth context
+                  try {
+                    await signOut();
+                  } catch (error) {
+                    console.error("Error during signOut:", error);
+                    
+                    // Fallback to direct method
+                    console.log("Using fallback signout method");
+                    signOutUser();
+                    
+                    // Show error toast and redirect
+                    toast({
+                      title: "Signed out with warning",
+                      description: "Some errors occurred but you have been signed out.",
+                      variant: "destructive"
+                    });
+                    navigate("/");
+                  }
                 }}
                 className="block w-full text-left px-4 py-2 text-sm text-error hover:bg-neutral-100 dark:hover:bg-neutral-700"
               >

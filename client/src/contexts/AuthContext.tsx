@@ -133,22 +133,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.removeItem("authToken");
       setCurrentUser(null);
       setUserProfile(null);
-      setRefreshNeeded(true);
       
       // Force page refresh to clear all states
       console.log("AuthContext: Sign out successful, redirecting to home");
-      setTimeout(() => {
-        window.location.href = "/";
-      }, 300);
+      window.location.href = "/";
     } catch (error) {
       console.error("Error signing out:", error);
+      // Fallback if Firebase signout fails
+      localStorage.removeItem("authToken");
+      setCurrentUser(null);
+      setUserProfile(null);
+      window.location.href = "/";
     }
   };
   
   const value = {
     currentUser,
     userProfile,
-    isAuthenticated: !!currentUser,
+    isAuthenticated: !!currentUser || !!localStorage.getItem("authToken"),
     isInitializing,
     signOut,
   };

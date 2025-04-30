@@ -44,22 +44,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // Store the token in localStorage for later use
           localStorage.setItem("authToken", token);
           
-          // Fetch user profile from our backend
-          const response = await apiRequest("GET", "/api/user/profile");
-          const profile = await response.json();
-          setUserProfile(profile);
+          try {
+            // Fetch user profile from our backend
+            const response = await apiRequest("GET", "/api/user/profile");
+            const profile = await response.json();
+            setUserProfile(profile);
+          } catch (profileError) {
+            console.error("Error fetching user profile:", profileError);
+            // Continue without profile if api fails
+          }
         } catch (error) {
-          console.error("Error fetching user profile:", error);
+          console.error("Error getting auth token:", error);
         }
       } else {
         localStorage.removeItem("authToken");
         setUserProfile(null);
       }
       
+      // Always set initializing to false, even if there are errors
+      setIsInitializing(false);
+    }, (error) => {
+      // Handle auth observer error
+      console.error("Auth state observer error:", error);
       setIsInitializing(false);
     });
     
-    return () => unsubscribe();
+    // Set a timeout to prevent infinite loading if Firebase auth takes too long
+    const timeout = setTimeout(() => {
+      setIsInitializing(false);
+    }, 5000);
+    
+    return () => {
+      unsubscribe();
+      clearTimeout(timeout);
+    };
   }, [auth]);
   
   const signOut = async () => {

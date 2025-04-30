@@ -26,7 +26,29 @@ export default function NewsCard({
     article.isTranslated || false,
   );
 
+  const { isAuthenticated } = useAuth();
   const bookmarked = isBookmarked(article.id);
+
+  const handleBookmarkToggle = async () => {
+    if (!isAuthenticated) {
+      toast({
+        title: "로그인이 필요합니다",
+        description: "북마크 기능을 사용하려면 로그인해주세요.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    try {
+      await toggleBookmark(article);
+    } catch (error) {
+      toast({
+        title: "북마크 실패",
+        description: "북마크 처리 중 오류가 발생했습니다.",
+        variant: "destructive",
+      });
+    }
+  };
 
   // 컴포넌트 마운트 시 자동 번역 수행
   useEffect(() => {
@@ -96,7 +118,7 @@ export default function NewsCard({
           <button
             className="bg-white/20 backdrop-blur-sm text-white p-1.5 rounded-full hover:bg-white/30"
             aria-label={bookmarked ? "Remove bookmark" : "Bookmark article"}
-            onClick={() => toggleBookmark(article)}
+            onClick={handleBookmarkToggle}
           >
             <i
               className={bookmarked ? "fas fa-bookmark" : "far fa-bookmark"}

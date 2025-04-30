@@ -63,20 +63,19 @@ export function useBookmarks() {
     return (bookmarks as NewsArticle[]).some(bookmark => bookmark.id === articleId);
   };
   
-  const toggleBookmark = (article: NewsArticle) => {
+  const toggleBookmark = async (article: NewsArticle) => {
     if (!isAuthenticated) {
-      toast({
-        title: "Authentication required",
-        description: "Please log in to bookmark articles.",
-        variant: "destructive",
-      });
-      return;
+      throw new Error("Authentication required");
     }
     
-    if (isBookmarked(article.id)) {
-      removeBookmarkMutation.mutate(article.id);
-    } else {
-      addBookmarkMutation.mutate(article.id);
+    try {
+      if (isBookmarked(article.id)) {
+        await removeBookmarkMutation.mutateAsync(article.id);
+      } else {
+        await addBookmarkMutation.mutateAsync(article.id);
+      }
+    } catch (error) {
+      throw error;
     }
   };
   

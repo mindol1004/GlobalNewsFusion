@@ -54,7 +54,10 @@ export async function translateText(params: TranslateParams): Promise<string> {
     };
 
     // Make request to LibreTranslate API
-    const response = await axios.post<TranslateResponse>(API_URL, requestData);
+    const response = await axios.post<TranslateResponse>(API_URL, requestData, {
+      timeout: 10000, // 10초 타임아웃
+      timeoutErrorMessage: "번역 서버 연결 시간 초과"
+    });
 
     const translatedText = response.data.translatedText;
     

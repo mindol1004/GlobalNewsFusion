@@ -1,3 +1,4 @@
+import { useEffect } from "react"
 import { useToast } from "@/hooks/use-toast"
 import {
   Toast,
@@ -10,6 +11,24 @@ import {
 
 export function Toaster() {
   const { toasts } = useToast()
+
+  // useEffect to automatically dismiss toasts after a delay
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      // 토스트 외부 클릭 시 모든 토스트 닫기
+      const toastElement = document.querySelector('[role="status"]');
+      if (toastElement && !toastElement.contains(event.target as Node)) {
+        document.querySelectorAll('[data-radix-toast-close]').forEach((closeBtn) => {
+          (closeBtn as HTMLElement).click();
+        });
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   return (
     <ToastProvider>

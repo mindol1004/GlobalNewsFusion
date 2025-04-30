@@ -10,10 +10,10 @@ import Profile from "@/pages/Profile";
 import Bookmarks from "@/pages/Bookmarks";
 import Category from "@/pages/Category";
 import Search from "@/pages/Search";
-import { useAuth } from "./hooks/useAuth";
+import { useAuthContext } from "./contexts/AuthContext";
 import LoginModal from "./components/Auth/LoginModal";
 import SignupModal from "./components/Auth/SignupModal";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
@@ -30,28 +30,8 @@ function Router() {
 }
 
 function App() {
-  const { isInitializing, isAuthenticated } = useAuth();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
-
-  // This will force a re-render when auth state changes
-  useEffect(() => {
-    setRefreshKey(prev => prev + 1);
-  }, [isAuthenticated]);
-
-  console.log("App component rendering, isInitializing:", isInitializing);
-
-  if (isInitializing) {
-    console.log("App is in initializing state, showing loading spinner");
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-
-  console.log("App initialization complete, rendering main content");
 
   return (
     <TooltipProvider>

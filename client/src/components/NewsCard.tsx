@@ -4,6 +4,7 @@ import { useBookmarks } from "../hooks/useBookmarks";
 import { NewsArticle } from "@shared/schema";
 import { useTranslationContext } from "../contexts/TranslationContext";
 import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "../hooks/useAuth";
 
 interface NewsCardProps {
   article: NewsArticle;

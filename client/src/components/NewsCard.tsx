@@ -100,28 +100,28 @@ export default function NewsCard({ article, showCategory = true }: NewsCardProps
           )}
         </div>
         <h3 className="text-lg font-bold mb-2 dark:text-white">
-          {isTranslated ? translatedTitle : article.title}
+          {isTranslated ? translatedArticle.title : article.title}
         </h3>
         <p className="text-neutral-600 dark:text-neutral-300 text-sm line-clamp-3">
-          {isTranslated ? translatedDescription : article.description}
+          {isTranslated ? translatedArticle.description : article.description}
         </p>
       </div>
       <div className="px-4 pb-4 flex justify-between items-center text-sm text-neutral-500 dark:text-neutral-400">
         <span>{article.source.name} • {formattedTime}</span>
-        {!isTranslated && article.language !== navigator.language.split('-')[0] && (
+        {!isTranslated && article.language !== userLanguage && (
           <button 
             className="flex items-center gap-1 hover:text-primary"
             onClick={handleTranslate}
             disabled={isTranslating}
           >
             <i className="fas fa-globe text-xs"></i>
-            <span>{isTranslating ? "Translating..." : "Translate"}</span>
+            <span>{isTranslating ? "번역 중..." : "번역하기"}</span>
           </button>
         )}
         {isTranslated && (
-          <div className="flex items-center gap-1">
-            <i className="fas fa-globe text-xs"></i>
-            <span>Translated</span>
+          <div className="flex items-center gap-1 text-green-600 dark:text-green-400">
+            <i className="fas fa-check text-xs"></i>
+            <span>번역됨</span>
           </div>
         )}
       </div>

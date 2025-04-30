@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { useBookmarks } from "../hooks/useBookmarks";
 import { NewsArticle } from "@shared/schema";
-import { useTranslation } from "../hooks/useTranslation";
+import { useTranslationContext } from "../contexts/TranslationContext";
 import { useToast } from "@/hooks/use-toast";
 
 interface FeaturedNewsCardProps {
@@ -11,35 +11,53 @@ interface FeaturedNewsCardProps {
 
 export default function FeaturedNewsCard({ article }: FeaturedNewsCardProps) {
   const { isBookmarked, toggleBookmark } = useBookmarks();
-  const { translate, isTranslating } = useTranslation();
+  const { translateNewsArticle, isTranslating, userLanguage } = useTranslationContext();
   const { toast } = useToast();
+  
+  // 번역된 기사 상태 관리
+  const [translatedArticle, setTranslatedArticle] = useState<NewsArticle>(article);
   const [isTranslated, setIsTranslated] = useState(article.isTranslated || false);
-  const [translatedTitle, setTranslatedTitle] = useState(article.title);
-  const [translatedDescription, setTranslatedDescription] = useState(article.description);
 
   const bookmarked = isBookmarked(article.id);
   
+  // 컴포넌트 마운트 시 자동 번역 수행
+  useEffect(() => {
+    // 기사가 이미 번역되었거나 사용자 언어와 기사 언어가 같으면 번역하지 않음
+    if (article.isTranslated || article.language === userLanguage) {
+      return;
+    }
+    
+    // 자동 번역 수행 (주요 기사는 우선적으로 번역)
+    const autoTranslate = async () => {
+      try {
+        const translated = await translateNewsArticle(article);
+        setTranslatedArticle(translated);
+        setIsTranslated(true);
+      } catch (error) {
+        console.error("Auto translation failed:", error);
+      }
+    };
+    
+    autoTranslate();
+  }, [article, translateNewsArticle, userLanguage]);
+  
+  // 수동 번역 버튼 핸들러
   const handleTranslate = async () => {
     if (isTranslated) return;
     
     try {
-      const [titleResult, descriptionResult] = await Promise.all([
-        translate(article.title, undefined, article.language),
-        translate(article.description, undefined, article.language)
-      ]);
-      
-      setTranslatedTitle(titleResult);
-      setTranslatedDescription(descriptionResult);
+      const translated = await translateNewsArticle(article);
+      setTranslatedArticle(translated);
       setIsTranslated(true);
       
       toast({
-        title: "Translation complete",
-        description: "The article has been translated."
+        title: "번역 완료",
+        description: "기사가 번역되었습니다."
       });
     } catch (error) {
       toast({
-        title: "Translation failed",
-        description: "Could not translate the article. Please try again later.",
+        title: "번역 실패",
+        description: "기사를 번역할 수 없습니다. 나중에 다시 시도해주세요.",
         variant: "destructive"
       });
     }
@@ -70,22 +88,22 @@ export default function FeaturedNewsCard({ article }: FeaturedNewsCardProps) {
             </span>
           </div>
           <h3 className="text-2xl font-bold mb-2">
-            {isTranslated ? translatedTitle : article.title}
+            {isTranslated ? translatedArticle.title : article.title}
           </h3>
           <p className="mb-2 line-clamp-2">
-            {isTranslated ? translatedDescription : article.description}
+            {isTranslated ? translatedArticle.description : article.description}
           </p>
           <div className="flex justify-between items-center">
             <div className="flex items-center gap-2">
               <span className="text-sm opacity-90">{article.source.name} • {formattedTime}</span>
-              {!isTranslated && article.language !== navigator.language.split('-')[0] && (
+              {!isTranslated && article.language !== userLanguage && (
                 <button 
                   className="text-sm flex items-center gap-1 hover:text-primary-dark"
                   onClick={handleTranslate}
                   disabled={isTranslating}
                 >
                   <i className="fas fa-globe text-xs"></i>
-                  <span>{isTranslating ? "Translating..." : "Translate"}</span>
+                  <span>{isTranslating ? "번역 중..." : "번역하기"}</span>
                 </button>
               )}
             </div>

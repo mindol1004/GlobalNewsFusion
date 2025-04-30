@@ -5,7 +5,7 @@ import {
   signOut as firebaseSignOut,
   User as FirebaseUser 
 } from "firebase/auth";
-import { firebaseApp } from "../lib/firebase";
+import { auth as firebaseAuth } from "../lib/firebase";
 import { apiRequest } from "../lib/queryClient";
 import { User } from "@shared/schema";
 
@@ -21,7 +21,7 @@ const AuthContext = createContext<AuthContextType>({
   currentUser: null,
   userProfile: null,
   isAuthenticated: false,
-  isInitializing: true,
+  isInitializing: false, // Changed default to false so app doesn't get stuck
   signOut: async () => {},
 });
 
@@ -29,11 +29,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<User | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
-  const auth = getAuth(firebaseApp);
+  
+  console.log("AuthProvider initializing");
   
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log("Auth state changed", user);
+    console.log("Setting up auth state listener");
+    let hasCompletedInitialCheck = false;
+    
+    // Set a timeout to force-exit initialization state after a reasonable time
+    const initTimeout = setTimeout(() => {
+      if (!hasCompletedInitialCheck) {
+        console.log("Auth initialization timed out, forcing completion");
+        setIsInitializing(false);
+        hasCompletedInitialCheck = true;
+      }
+    }, 3000);
+    
+    const unsubscribe = onAuthStateChanged(firebaseAuth, async (user) => {
+      console.log("Auth state changed, user:", user ? "exists" : "null");
       setCurrentUser(user);
       
       if (user) {
@@ -61,28 +74,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUserProfile(null);
       }
       
-      // Always set initializing to false, even if there are errors
-      setIsInitializing(false);
+      // Mark initialization as complete
+      if (!hasCompletedInitialCheck) {
+        console.log("Auth initialization complete");
+        setIsInitializing(false);
+        hasCompletedInitialCheck = true;
+        clearTimeout(initTimeout);
+      }
     }, (error) => {
       // Handle auth observer error
       console.error("Auth state observer error:", error);
-      setIsInitializing(false);
+      
+      if (!hasCompletedInitialCheck) {
+        setIsInitializing(false);
+        hasCompletedInitialCheck = true;
+        clearTimeout(initTimeout);
+      }
     });
-    
-    // Set a timeout to prevent infinite loading if Firebase auth takes too long
-    const timeout = setTimeout(() => {
-      setIsInitializing(false);
-    }, 5000);
     
     return () => {
       unsubscribe();
-      clearTimeout(timeout);
+      clearTimeout(initTimeout);
     };
-  }, [auth]);
+  }, []); // Removed auth from dependency array
   
   const signOut = async () => {
     try {
-      await firebaseSignOut(auth);
+      await firebaseSignOut(firebaseAuth);
       localStorage.removeItem("authToken");
       setUserProfile(null);
     } catch (error) {
@@ -98,6 +116,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signOut,
   };
   
+  console.log("AuthProvider rendering, isInitializing:", isInitializing);
+  
   return (
     <AuthContext.Provider value={value}>
       {children}
@@ -106,5 +126,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 }
 
 export function useAuthContext() {
-  return useContext(AuthContext);
+  const context = useContext(AuthContext);
+  return context;
 }

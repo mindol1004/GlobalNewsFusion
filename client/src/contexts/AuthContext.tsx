@@ -29,8 +29,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
   const [userProfile, setUserProfile] = useState<User | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [refreshNeeded, setRefreshNeeded] = useState(false);
   
   console.log("AuthProvider initializing");
+  
+  // Check for auth token on mount
+  useEffect(() => {
+    const token = localStorage.getItem("authToken");
+    if (token) {
+      console.log("Found token in storage, user should be authenticated");
+      // We have a token, but we'll wait for Firebase auth state to confirm
+    } else {
+      console.log("No token found in storage");
+    }
+  }, []);
   
   useEffect(() => {
     console.log("Setting up auth state listener");

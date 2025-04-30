@@ -75,28 +75,55 @@ export function useAuth() {
   const loginWithEmail = async (email: string, password: string): Promise<UserCredential> => {
     setIsLoading(true);
     try {
+      // Attempt to sign in
       const result = await signInWithEmailAndPassword(auth, email, password);
       
-      // Store token and update UI after successful login
+      // Handle successful login
       if (result.user) {
         try {
           // Get the token for the authenticated user
-          const token = await result.user.getIdToken();
+          const token = await result.user.getIdToken(true); // Force refresh
           
           // Store auth token for subsequent requests
           localStorage.setItem("authToken", token);
           
-          toast({
-            title: "Login successful",
-            description: "You are now logged in",
-          });
+          // Register user in backend to make sure profile is created
+          try {
+            await apiRequest("POST", "/api/user/register", {
+              email: result.user.email,
+              displayName: result.user.displayName,
+              photoURL: result.user.photoURL,
+              firebaseId: result.user.uid,
+              username: result.user.email?.split('@')[0] || `user_${Date.now()}`,
+            });
+            
+            // Get user profile to update UI
+            const profileResponse = await apiRequest("GET", "/api/user/profile");
+            const profile = await profileResponse.json();
+            console.log("Profile fetched after login:", profile);
+            
+            toast({
+              title: "Login successful",
+              description: "Welcome back, " + (profile.displayName || profile.username || email),
+            });
+          } catch (apiError) {
+            console.error("Backend API error:", apiError);
+            toast({
+              title: "Login successful",
+              description: "You are now logged in with limited functionality",
+            });
+          }
           
-          // Force refresh the page to update authentication state
+          // Force refresh the page to update authentication state after a short delay
           setTimeout(() => {
             window.location.reload();
           }, 1000);
         } catch (tokenError) {
           console.error("Error getting user token:", tokenError);
+          toast({
+            title: "Login partially successful",
+            description: "Logged in but couldn't get authentication token",
+          });
         }
       }
       

@@ -13,9 +13,18 @@ interface HeaderProps {
 }
 
 export default function Header({ onLoginClick, onSignupClick }: HeaderProps) {
-  const { isAuthenticated, userProfile, isInitializing } = useAuth();
+  const auth = useAuth();
+  const { isAuthenticated, userProfile, isInitializing } = auth;
   
-  console.log("Header rendering, auth state:", { isAuthenticated, userProfile, isInitializing });
+  // Use the Firebase token from localStorage as a direct fallback
+  const hasToken = localStorage.getItem("authToken") !== null;
+  
+  console.log("Header rendering, auth state:", { 
+    isAuthenticated, 
+    userProfile: userProfile ? "exists" : "null", 
+    isInitializing,
+    hasToken 
+  });
   const { theme, setTheme } = useTheme();
   const [location] = useLocation();
   
@@ -54,8 +63,8 @@ export default function Header({ onLoginClick, onSignupClick }: HeaderProps) {
           </button>
           
           {/* User Profile or Login Buttons */}
-          {isAuthenticated ? (
-            <UserProfileDropdown user={userProfile} />
+          {isAuthenticated || hasToken ? (
+            <UserProfileDropdown user={userProfile || { username: "User", displayName: "User" }} />
           ) : (
             <div className="flex items-center gap-2">
               <Button 

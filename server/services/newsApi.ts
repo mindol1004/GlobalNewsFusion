@@ -1,11 +1,13 @@
 import axios from "axios";
 import { NewsApiResponse, NewsArticle } from "@shared/schema";
 
-// Use TheNewsAPI or NewsData.io based on environment variable
-const API_KEY = process.env.THE_NEWS_API_KEY || process.env.NEWSDATA_IO_KEY;
-const API_BASE_URL = process.env.THE_NEWS_API_KEY 
-  ? "https://api.thenewsapi.com/v1/news"
-  : "https://newsdata.io/api/1/news";
+// Use NewsData.io for getting news data
+const NEWSDATA_IO_KEY = process.env.NEWSDATA_IO_KEY;
+// Use NewsData.io API
+const USE_THE_NEWS_API = false;
+const API_BASE_URL = "https://newsdata.io/api/1/news";
+
+console.log(`Using NewsData.io for news data`);
 
 interface FetchNewsParams {
   category?: string;
@@ -33,7 +35,10 @@ export async function fetchNews(params: FetchNewsParams = {}): Promise<NewsApiRe
     } = params;
 
     // Cache key for storing API response
-    const cacheKey = JSON.stringify({ ...params, API_KEY });
+    const cacheKey = JSON.stringify({ 
+      ...params, 
+      apiKey: USE_THE_NEWS_API ? THE_NEWS_API_KEY : NEWSDATA_IO_KEY 
+    });
     
     // Check if the request is cached
     const cachedResponse = newsCache.get(cacheKey);
@@ -44,9 +49,9 @@ export async function fetchNews(params: FetchNewsParams = {}): Promise<NewsApiRe
     // Build query parameters based on which API we're using
     const queryParams: Record<string, string | number> = {};
     
-    if (process.env.THE_NEWS_API_KEY) {
+    if (USE_THE_NEWS_API) {
       // TheNewsAPI parameters
-      queryParams.api_token = API_KEY as string;
+      queryParams.api_token = THE_NEWS_API_KEY as string;
       queryParams.language = language;
       queryParams.limit = pageSize;
       queryParams.page = page;
@@ -71,7 +76,7 @@ export async function fetchNews(params: FetchNewsParams = {}): Promise<NewsApiRe
       return transformedResponse;
     } else {
       // NewsData.io parameters
-      queryParams.apikey = API_KEY as string;
+      queryParams.apikey = NEWSDATA_IO_KEY as string;
       queryParams.language = language;
       queryParams.size = pageSize;
       queryParams.page = page;
@@ -112,10 +117,10 @@ export async function fetchArticleById(id: string): Promise<NewsArticle> {
       return cachedArticle;
     }
 
-    if (process.env.THE_NEWS_API_KEY) {
+    if (USE_THE_NEWS_API) {
       const response = await axios.get(`${API_BASE_URL}/uuid/${id}`, {
         params: {
-          api_token: API_KEY
+          api_token: THE_NEWS_API_KEY
         }
       });
       
@@ -128,7 +133,7 @@ export async function fetchArticleById(id: string): Promise<NewsArticle> {
       // So we'll search by ID and get the first result
       const response = await axios.get(API_BASE_URL, {
         params: {
-          apikey: API_KEY,
+          apikey: NEWSDATA_IO_KEY,
           q: id
         }
       });

@@ -1,13 +1,15 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { addBookmark, removeBookmark, fetchBookmarks } from "../lib/api";
-import { useAuth } from "./useAuth";
+import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "./use-toast";
 import { NewsArticle } from "@shared/schema";
 
 export function useBookmarks() {
-  const { isAuthenticated } = useAuth();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  
+  const isAuthenticated = !!user;
   
   const {
     data: bookmarks = [],
@@ -29,6 +31,7 @@ export function useBookmarks() {
       });
     },
     onError: (error: Error) => {
+      console.error("Failed to add bookmark:", error);
       toast({
         title: "Failed to add bookmark",
         description: error.message,
@@ -47,6 +50,7 @@ export function useBookmarks() {
       });
     },
     onError: (error: Error) => {
+      console.error("Failed to remove bookmark:", error);
       toast({
         title: "Failed to remove bookmark",
         description: error.message,
@@ -60,6 +64,15 @@ export function useBookmarks() {
   };
   
   const toggleBookmark = (article: NewsArticle) => {
+    if (!isAuthenticated) {
+      toast({
+        title: "Authentication required",
+        description: "Please log in to bookmark articles.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     if (isBookmarked(article.id)) {
       removeBookmarkMutation.mutate(article.id);
     } else {
@@ -75,5 +88,6 @@ export function useBookmarks() {
     toggleBookmark,
     addBookmark: addBookmarkMutation.mutate,
     removeBookmark: removeBookmarkMutation.mutate,
+    isAuthenticated,
   };
 }

@@ -1,4 +1,5 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
+import { getCurrentUserToken } from "./auth-helpers";
 
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
@@ -13,16 +14,22 @@ export async function apiRequest(
   data?: unknown | undefined,
   token?: string | undefined,
 ): Promise<Response> {
-  // Get token from localStorage if not provided
-  const authToken = token || localStorage.getItem("authToken");
+  // 토큰이 제공되지 않으면 getCurrentUserToken에서 가져옵니다
+  let authToken = token;
+  if (!authToken) {
+    authToken = await getCurrentUserToken();
+  }
   
-  // Build headers
+  // 헤더 설정
   const headers: Record<string, string> = {};
   if (data) {
     headers["Content-Type"] = "application/json";
   }
   if (authToken) {
     headers["Authorization"] = `Bearer ${authToken}`;
+    console.log(`Making request to ${url} with auth token: present`);
+  } else {
+    console.log(`Making request to ${url} without auth token`);
   }
   
   const res = await fetch(url, {
@@ -32,56 +39,46 @@ export async function apiRequest(
     credentials: "include",
   });
 
-  await throwIfResNotOk(res);
-  return res;
+  if (!res.ok) {
+    console.error(`API request failed: ${res.status} ${res.statusText}`);
+  }
+
+  try {
+    await throwIfResNotOk(res);
+    return res;
+  } catch (error) {
+    console.error("API request error:", error);
+    throw error;
+  }
 }
 
 type UnauthorizedBehavior = "returnNull" | "throw";
 export const getQueryFn: <T>(options: {
   on401: UnauthorizedBehavior;
-}) => QueryFunction<T> =
-  ({ on401: unauthorizedBehavior }) =>
+}) => QueryFunction<T, readonly unknown[]> = 
+  ({ on401 }) =>
   async ({ queryKey }) => {
-    // Get token from localStorage
-    const authToken = localStorage.getItem("authToken");
+    const url = typeof queryKey[0] === "string" ? queryKey[0] : "";
     
-    // Build headers
-    const headers: Record<string, string> = {};
-    
-    // Add auth token if available
-    if (authToken) {
-      headers["Authorization"] = `Bearer ${authToken}`;
+    try {
+      const token = await getCurrentUserToken();
+      const res = await apiRequest("GET", url, undefined, token);
+      
+      return res.json();
+    } catch (e: any) {
+      if (e.message?.startsWith("401:") && on401 === "returnNull") {
+        return null as unknown as T;
+      }
+      throw e;
     }
-    
-    // Add content type for better server handling
-    headers["Content-Type"] = "application/json";
-    
-    console.log(`Making request to ${queryKey[0]} with auth token: ${authToken ? "present" : "not present"}`);
-    
-    const res = await fetch(queryKey[0] as string, {
-      credentials: "include",
-      headers,
-    });
-
-    if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-      return null;
-    }
-
-    await throwIfResNotOk(res);
-    return await res.json();
   };
 
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      queryFn: getQueryFn({ on401: "throw" }),
-      refetchInterval: false,
+      retry: 1,
+      staleTime: 1000 * 60 * 5, // 5 minutes
       refetchOnWindowFocus: false,
-      staleTime: Infinity,
-      retry: false,
-    },
-    mutations: {
-      retry: false,
     },
   },
 });

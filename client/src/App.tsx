@@ -14,13 +14,14 @@ import { useAuth } from "./hooks/useAuth";
 import LoginModal from "./components/Auth/LoginModal";
 import SignupModal from "./components/Auth/SignupModal";
 import { useState } from "react";
+import { ProtectedRoute } from "./lib/protected-route";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
-      <Route path="/profile" component={Profile} />
-      <Route path="/bookmarks" component={Bookmarks} />
+      <ProtectedRoute path="/profile" component={Profile} />
+      <ProtectedRoute path="/bookmarks" component={Bookmarks} />
       <Route path="/category/:category" component={Category} />
       <Route path="/search" component={Search} />
       <Route component={NotFound} />

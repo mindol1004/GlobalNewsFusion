@@ -1,6 +1,7 @@
 export interface Category {
   id: string;
   name: string;
+  nameKo?: string; // 한국어 이름
   slug: string;
 }
 
@@ -28,12 +29,12 @@ export interface UserPreferences {
 
 // Predefined categories (using NewsData.io supported categories)
 export const CATEGORIES: Category[] = [
-  { id: 'top', name: 'Top Stories', slug: 'top' },
-  { id: 'world', name: 'World', slug: 'world' },
-  { id: 'business', name: 'Business', slug: 'business' },
-  { id: 'technology', name: 'Technology', slug: 'technology' },
-  { id: 'entertainment', name: 'Entertainment', slug: 'entertainment' },
-  { id: 'sports', name: 'Sports', slug: 'sports' },
-  { id: 'science', name: 'Science', slug: 'science' },
-  { id: 'health', name: 'Health', slug: 'health' },
+  { id: 'top', name: 'Top Stories', nameKo: '주요 뉴스', slug: 'top' },
+  { id: 'world', name: 'World', nameKo: '세계', slug: 'world' },
+  { id: 'business', name: 'Business', nameKo: '경제', slug: 'business' },
+  { id: 'technology', name: 'Technology', nameKo: '기술', slug: 'technology' },
+  { id: 'entertainment', name: 'Entertainment', nameKo: '엔터테인먼트', slug: 'entertainment' },
+  { id: 'sports', name: 'Sports', nameKo: '스포츠', slug: 'sports' },
+  { id: 'science', name: 'Science', nameKo: '과학', slug: 'science' },
+  { id: 'health', name: 'Health', nameKo: '건강', slug: 'health' },
 ];

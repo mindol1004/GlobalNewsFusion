@@ -118,7 +118,7 @@ export default function Header({
                     ? "text-primary border-b-2 border-primary"
                     : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
                 }`}>
-                  {cat.name}
+                  {cat.nameKo && t(cat.name, cat.nameKo)}
                 </div>
               </Link>
             ))}

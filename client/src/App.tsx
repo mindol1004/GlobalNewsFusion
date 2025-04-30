@@ -13,7 +13,7 @@ import Search from "@/pages/Search";
 import { useAuth } from "./contexts/AuthContext";
 import LoginModal from "./components/Auth/LoginModal";
 import SignupModal from "./components/Auth/SignupModal";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { loginWithEmail, loginWithGoogle, registerWithEmail, logout } from "./lib/auth-helpers";
 import { useToast } from "./hooks/use-toast";
 
@@ -41,6 +41,19 @@ function App() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
   const { toast } = useToast();
+
+  // 로그인 상태 디버깅을 위한 useEffect
+  useEffect(() => {
+    console.log("App.tsx - Current auth state:", { 
+      isLoggedIn: !!user, 
+      isLoading, 
+      userInfo: user ? {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName
+      } : null
+    });
+  }, [user, isLoading]);
 
   const handleLogin = async (email: string, password: string) => {
     try {

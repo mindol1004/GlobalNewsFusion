@@ -53,9 +53,14 @@ export default function FeaturedNewsCard({ article }: FeaturedNewsCardProps) {
     <div className="news-card lg:col-span-2 bg-white dark:bg-neutral-800 rounded-xl shadow-apple dark:shadow-apple-dark overflow-hidden">
       <div className="relative h-80 md:h-96">
         <img 
-          src={article.image || "https://via.placeholder.com/1080x580?text=No+Image+Available"}
+          src={article.image || "https://placehold.co/1080x580/e2e8f0/334155?text=No+Image"}
           alt={article.title} 
           className="w-full h-full object-cover"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.onerror = null;
+            target.src = "https://placehold.co/1080x580/e2e8f0/334155?text=Image+Error";
+          }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
         <div className="absolute bottom-0 left-0 right-0 p-6 text-white">

@@ -29,12 +29,27 @@ export function useAuth() {
       if (result.user) {
         await updateProfile(result.user, { displayName });
         
-        // Create user profile in our backend
-        await apiRequest("POST", "/api/user/register", {
-          email,
-          displayName,
-          firebaseId: result.user.uid,
-        });
+        try {
+          // Get the token for the newly created user
+          const token = await result.user.getIdToken();
+          
+          // Create user profile in our backend
+          await apiRequest("POST", "/api/user/register", {
+            email,
+            displayName,
+            firebaseId: result.user.uid,
+            username: email.split('@')[0], // Use part of email as username
+          }, token);
+          
+          // Store auth token for subsequent requests
+          localStorage.setItem("authToken", token);
+          
+          // Force refresh the page to update authentication state
+          window.location.reload();
+        } catch (apiError) {
+          console.error("Error registering user with backend:", apiError);
+          // Continue anyway since Firebase auth succeeded
+        }
       }
       
       return result;

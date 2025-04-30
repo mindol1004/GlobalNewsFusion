@@ -53,9 +53,14 @@ export default function SideFeaturedNewsCard({ article }: SideFeaturedNewsCardPr
     <div className="news-card bg-white dark:bg-neutral-800 rounded-xl shadow-apple dark:shadow-apple-dark overflow-hidden flex flex-col">
       <div className="relative h-48">
         <img 
-          src={article.image || "https://via.placeholder.com/600x400?text=No+Image+Available"}
+          src={article.image || "https://placehold.co/600x400/e2e8f0/334155?text=No+Image"}
           alt={article.title} 
           className="w-full h-full object-cover"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.onerror = null;
+            target.src = "https://placehold.co/600x400/e2e8f0/334155?text=Image+Error";
+          }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
         <div className="absolute top-3 right-3">

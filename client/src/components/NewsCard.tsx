@@ -54,9 +54,14 @@ export default function NewsCard({ article, showCategory = true }: NewsCardProps
     <div className="news-card bg-white dark:bg-neutral-800 rounded-xl shadow-apple dark:shadow-apple-dark overflow-hidden flex flex-col">
       <div className="relative h-48">
         <img 
-          src={article.image || "https://via.placeholder.com/500x300?text=No+Image+Available"}
+          src={article.image || "https://placehold.co/500x300/e2e8f0/334155?text=No+Image"}
           alt={article.title} 
           className="w-full h-full object-cover"
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.onerror = null;
+            target.src = "https://placehold.co/500x300/e2e8f0/334155?text=Image+Error";
+          }}
         />
         <div className="absolute top-3 right-3">
           <button 

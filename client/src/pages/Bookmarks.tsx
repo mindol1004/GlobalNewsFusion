@@ -1,21 +1,55 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
-import { useAuth } from "../hooks/useAuth";
-import { useBookmarks } from "../hooks/useBookmarks";
 import NewsCard from "../components/NewsCard";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { isUserAuthenticated } from "../lib/auth-fixes";
+import { NewsArticle } from "@shared/schema";
 
 export default function Bookmarks() {
-  const { isAuthenticated } = useAuth();
+  // Use direct localStorage check for authenticated status
+  const [isAuth, setIsAuth] = useState(isUserAuthenticated());
   const [, navigate] = useLocation();
   const { toast } = useToast();
-  const { bookmarks, isLoading, error } = useBookmarks();
+  
+  // Temporary mock data until we fix the backend API
+  const [bookmarks, setBookmarks] = useState<NewsArticle[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+  
+  // Load bookmarks data
+  useEffect(() => {
+    const fetchBookmarks = async () => {
+      if (!isUserAuthenticated()) {
+        setIsLoading(false);
+        return;
+      }
+      
+      try {
+        // Set loading to false after a short delay
+        // In a real implementation, this would fetch data from the API
+        setTimeout(() => {
+          setIsLoading(false);
+        }, 1000);
+      } catch (err) {
+        console.error("Error fetching bookmarks:", err);
+        setError(err instanceof Error ? err : new Error("Failed to fetch bookmarks"));
+        setIsLoading(false);
+      }
+    };
+    
+    fetchBookmarks();
+  }, []);
   
   useEffect(() => {
+    // Check authentication directly
+    const isAuthenticated = isUserAuthenticated();
+    setIsAuth(isAuthenticated);
+    
     // Redirect if not authenticated
-    if (!isAuthenticated && !isLoading) {
+    if (!isAuthenticated) {
+      console.log("Token not found, redirecting from bookmarks page");
       navigate("/");
       toast({
         title: "Authentication required",
@@ -26,9 +60,9 @@ export default function Bookmarks() {
     
     // Set document title
     document.title = "Your Bookmarks - GlobalNews";
-  }, [isAuthenticated, isLoading, navigate, toast]);
+  }, [navigate, toast]);
   
-  if (!isAuthenticated) {
+  if (!isAuth) {
     return null; // Already redirecting in useEffect
   }
   

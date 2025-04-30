@@ -1,77 +1,65 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuth } from "@/hooks/useAuth";
+import { 
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription 
+} from "@/components/ui/dialog";
+import { FaGoogle } from "react-icons/fa";
 import { useToast } from "@/hooks/use-toast";
 
 interface SignupModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onRegister: (email: string, password: string, displayName: string) => Promise<void>;
+  onGoogleSignup: () => Promise<void>;
   onLoginClick: () => void;
 }
 
-export default function SignupModal({ isOpen, onClose, onLoginClick }: SignupModalProps) {
+export default function SignupModal({ 
+  isOpen, 
+  onClose, 
+  onRegister,
+  onGoogleSignup,
+  onLoginClick
+}: SignupModalProps) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const { registerWithEmail, loginWithGoogle, isLoading } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
   
-  const handleSignup = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!name || !email || !password || !confirmPassword) {
-      toast({
-        title: "Missing fields",
-        description: "Please fill in all fields.",
-        variant: "destructive",
-      });
-      return;
-    }
+    if (!name || !email || !password) return;
     
     if (password !== confirmPassword) {
       toast({
-        title: "Passwords don't match",
-        description: "Please make sure your passwords match.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    if (password.length < 6) {
-      toast({
-        title: "Password too short",
-        description: "Password must be at least 6 characters long.",
-        variant: "destructive",
+        title: "비밀번호 불일치",
+        description: "비밀번호가 일치하지 않습니다.",
+        variant: "destructive"
       });
       return;
     }
     
     try {
-      await registerWithEmail(email, password, name);
-      toast({
-        title: "Account created",
-        description: "Your account has been created successfully!"
-      });
-      onClose();
+      setIsSubmitting(true);
+      await onRegister(email, password, name);
+      // onClose will be called in the parent component
     } catch (error) {
-      // Error is handled in the useAuth hook
+      // Error is handled in the parent component
+    } finally {
+      setIsSubmitting(false);
     }
   };
   
   const handleGoogleSignup = async () => {
     try {
-      await loginWithGoogle();
-      toast({
-        title: "Account created",
-        description: "Your account has been created successfully!"
-      });
-      onClose();
+      await onGoogleSignup();
+      // onClose will be called in the parent component
     } catch (error) {
-      // Error is handled in the useAuth hook
+      // Error is handled in the parent component
     }
   };
   
@@ -79,90 +67,102 @@ export default function SignupModal({ isOpen, onClose, onLoginClick }: SignupMod
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="bg-white dark:bg-neutral-800 rounded-xl shadow-apple-lg dark:shadow-apple-dark-md max-w-md w-full mx-4 p-6">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold dark:text-white">
-            Create your account
-          </DialogTitle>
+          <DialogTitle className="text-2xl font-semibold text-center">Create Account</DialogTitle>
+          <DialogDescription className="text-center text-neutral-500 dark:text-neutral-400">
+            Join GlobalNews for personalized news experience
+          </DialogDescription>
         </DialogHeader>
         
-        <form onSubmit={handleSignup}>
-          <div className="mb-4">
-            <Label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Name</Label>
+        <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+          <div className="space-y-2">
+            <Label htmlFor="name">Full Name</Label>
             <Input
+              id="name"
               type="text"
+              placeholder="John Doe"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full py-2 px-3 rounded-lg border border-neutral-200 focus:outline-none focus:border-primary focus-effect dark:bg-neutral-700 dark:border-neutral-600 dark:text-white"
-              placeholder="Your full name"
+              required
+              className="bg-neutral-100 dark:bg-neutral-700 border-0"
             />
           </div>
           
-          <div className="mb-4">
-            <Label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Email</Label>
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
             <Input
+              id="email"
               type="email"
+              placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full py-2 px-3 rounded-lg border border-neutral-200 focus:outline-none focus:border-primary focus-effect dark:bg-neutral-700 dark:border-neutral-600 dark:text-white"
-              placeholder="Your email address"
+              required
+              className="bg-neutral-100 dark:bg-neutral-700 border-0"
             />
           </div>
           
-          <div className="mb-4">
-            <Label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Password</Label>
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
             <Input
+              id="password"
               type="password"
+              placeholder="••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full py-2 px-3 rounded-lg border border-neutral-200 focus:outline-none focus:border-primary focus-effect dark:bg-neutral-700 dark:border-neutral-600 dark:text-white"
-              placeholder="Create a password"
+              required
+              className="bg-neutral-100 dark:bg-neutral-700 border-0"
             />
           </div>
           
-          <div className="mb-6">
-            <Label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-1">Confirm Password</Label>
+          <div className="space-y-2">
+            <Label htmlFor="confirmPassword">Confirm Password</Label>
             <Input
+              id="confirmPassword"
               type="password"
+              placeholder="••••••••"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full py-2 px-3 rounded-lg border border-neutral-200 focus:outline-none focus:border-primary focus-effect dark:bg-neutral-700 dark:border-neutral-600 dark:text-white"
-              placeholder="Confirm your password"
+              required
+              className="bg-neutral-100 dark:bg-neutral-700 border-0"
             />
           </div>
           
           <Button 
-            type="submit"
-            disabled={isLoading}
-            className="btn-apple w-full bg-primary hover:bg-primary-dark text-white font-medium py-2.5 px-4 rounded-lg mb-4"
+            type="submit" 
+            className="w-full bg-primary hover:bg-primary/90"
+            disabled={isSubmitting}
           >
-            {isLoading ? "Creating account..." : "Create account"}
+            {isSubmitting ? "Creating Account..." : "Create Account"}
           </Button>
-          
-          <div className="relative flex items-center justify-center text-sm text-neutral-500 dark:text-neutral-400 my-4">
-            <div className="border-t border-neutral-200 dark:border-neutral-700 absolute left-0 right-0"></div>
-            <div className="bg-white dark:bg-neutral-800 px-4 relative">or continue with</div>
-          </div>
-          
-          <Button
-            type="button"
-            variant="outline"
-            disabled={isLoading}
-            onClick={handleGoogleSignup}
-            className="btn-apple w-full bg-white dark:bg-neutral-700 border border-neutral-200 dark:border-neutral-600 text-neutral-800 dark:text-white font-medium py-2.5 px-4 rounded-lg flex items-center justify-center mb-4"
-          >
-            <i className="fas fa-globe mr-2"></i> Google
-          </Button>
-          
-          <div className="text-center text-sm text-neutral-600 dark:text-neutral-400">
-            Already have an account?{" "}
-            <button
-              type="button"
-              onClick={onLoginClick}
-              className="text-primary hover:underline"
-            >
-              Sign in
-            </button>
-          </div>
         </form>
+        
+        <div className="relative my-6">
+          <div className="absolute inset-0 flex items-center">
+            <div className="w-full border-t border-neutral-200 dark:border-neutral-700"></div>
+          </div>
+          <div className="relative flex justify-center text-xs">
+            <span className="px-2 bg-white dark:bg-neutral-800 text-neutral-500">or continue with</span>
+          </div>
+        </div>
+        
+        <Button 
+          type="button" 
+          variant="outline" 
+          className="w-full flex items-center justify-center gap-2"
+          onClick={handleGoogleSignup}
+        >
+          <FaGoogle className="text-red-500" />
+          <span>Sign up with Google</span>
+        </Button>
+        
+        <div className="mt-4 text-center text-sm text-neutral-500 dark:text-neutral-400">
+          Already have an account?{" "}
+          <button 
+            onClick={onLoginClick} 
+            className="text-primary hover:underline font-medium"
+          >
+            Sign in
+          </button>
+        </div>
       </DialogContent>
     </Dialog>
   );

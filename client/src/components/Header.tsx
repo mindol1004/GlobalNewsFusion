@@ -1,27 +1,24 @@
 import { Link, useLocation } from "wouter";
-import { useState } from "react";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/hooks/useAuth";
-import UserProfileDropdown from "./UserProfileDropdown";
-import SearchBar from "./SearchBar";
-import CategoryTabs from "./CategoryTabs";
+import { User } from "firebase/auth";
+import { CATEGORIES } from "../types";
 
 interface HeaderProps {
+  user: User | null;
+  isLoading: boolean;
   onLoginClick: () => void;
   onSignupClick: () => void;
+  onLogoutClick: () => void;
 }
 
-export default function Header({ onLoginClick, onSignupClick }: HeaderProps) {
-  const auth = useAuth();
-  const { isAuthenticated, userProfile, isInitializing } = auth;
-  
-  console.log("Header rendering, auth state:", { 
-    isAuthenticated, 
-    userProfile: userProfile ? "exists" : "null", 
-    isInitializing
-  });
-  
+export default function Header({ 
+  user, 
+  isLoading, 
+  onLoginClick, 
+  onSignupClick,
+  onLogoutClick
+}: HeaderProps) {
   const { theme, setTheme } = useTheme();
   const [location] = useLocation();
   
@@ -46,8 +43,21 @@ export default function Header({ onLoginClick, onSignupClick }: HeaderProps) {
             </Link>
           </div>
 
-          <div className="hidden md:block mx-4 flex-1 max-w-xl">
-            <SearchBar />
+          <div className="flex-grow mx-4">
+            <div className="hidden md:block max-w-md mx-auto">
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search news..."
+                  className="w-full px-4 py-2 rounded-full bg-neutral-100 dark:bg-neutral-700 focus:outline-none"
+                />
+                <button className="absolute right-3 top-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                  </svg>
+                </button>
+              </div>
+            </div>
           </div>
 
           <div className="flex items-center space-x-4">
@@ -68,10 +78,33 @@ export default function Header({ onLoginClick, onSignupClick }: HeaderProps) {
               )}
             </Button>
 
-            {isInitializing ? (
+            {isLoading ? (
               <div className="h-10 w-10 rounded-full bg-neutral-200 dark:bg-neutral-700 animate-pulse"></div>
-            ) : isAuthenticated && userProfile ? (
-              <UserProfileDropdown user={userProfile} />
+            ) : user ? (
+              <div className="flex items-center space-x-4">
+                <Link href="/bookmarks">
+                  <Button variant="ghost" size="sm">
+                    Saved
+                  </Button>
+                </Link>
+                <Link href="/profile">
+                  <Button variant="ghost" size="icon" className="rounded-full">
+                    {user.photoURL ? (
+                      <img src={user.photoURL} alt="Profile" className="w-10 h-10 rounded-full" />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center">
+                        {user.displayName?.charAt(0) || user.email?.charAt(0) || 'U'}
+                      </div>
+                    )}
+                  </Button>
+                </Link>
+                <Button 
+                  variant="ghost" 
+                  onClick={onLogoutClick}
+                >
+                  Logout
+                </Button>
+              </div>
             ) : (
               <div className="flex items-center space-x-2">
                 <Button 
@@ -92,7 +125,21 @@ export default function Header({ onLoginClick, onSignupClick }: HeaderProps) {
           </div>
         </div>
         
-        <CategoryTabs activeCategory={category} />
+        <div className="px-4 pb-1 overflow-x-auto flex no-scrollbar border-b border-neutral-200 dark:border-neutral-700">
+          <div className="flex space-x-1 min-w-full">
+            {CATEGORIES.map((cat) => (
+              <Link key={cat.id} href={cat.id === 'general' ? '/' : `/category/${cat.slug}`}>
+                <div className={`px-4 py-2 font-medium whitespace-nowrap cursor-pointer ${
+                  category === cat.slug
+                    ? "text-primary border-b-2 border-primary"
+                    : "text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
+                }`}>
+                  {cat.name}
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
       </div>
     </header>
   );

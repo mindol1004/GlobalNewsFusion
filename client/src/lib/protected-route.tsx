@@ -1,4 +1,4 @@
-import { useAuthContext } from "../contexts/AuthContext";
+import { useAuth } from "../contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 import { Redirect, Route } from "wouter";
 import { useToast } from "@/hooks/use-toast";
@@ -16,13 +16,13 @@ export function ProtectedRoute({
 }: ProtectedRouteProps) {
   // Create a wrapper component that contains all our logic
   const ProtectedWrapper = () => {
-    const { isAuthenticated, isInitializing } = useAuthContext();
+    const { user, isLoading } = useAuth();
     const { toast } = useToast();
     const [isRedirecting, setIsRedirecting] = useState(false);
     
     // Check authentication and redirect if needed
     useEffect(() => {
-      if (!isInitializing && !isAuthenticated) {
+      if (!isLoading && !user) {
         console.log("User not authenticated, redirecting to home");
         
         toast({
@@ -33,10 +33,10 @@ export function ProtectedRoute({
         
         setIsRedirecting(true);
       }
-    }, [isInitializing, isAuthenticated, toast]);
+    }, [isLoading, user, toast]);
     
     // Show loading spinner while checking authentication
-    if (isInitializing) {
+    if (isLoading) {
       return (
         <div className="flex items-center justify-center min-h-screen">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -45,7 +45,7 @@ export function ProtectedRoute({
     }
     
     // Redirect if not authenticated
-    if (!isAuthenticated || isRedirecting) {
+    if (!user || isRedirecting) {
       return <Redirect to="/" />;
     }
     

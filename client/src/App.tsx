@@ -10,18 +10,25 @@ import Profile from "@/pages/Profile";
 import Bookmarks from "@/pages/Bookmarks";
 import Category from "@/pages/Category";
 import Search from "@/pages/Search";
-import { useAuthContext } from "./contexts/AuthContext";
+import { useAuth } from "./contexts/AuthContext";
 import LoginModal from "./components/Auth/LoginModal";
 import SignupModal from "./components/Auth/SignupModal";
 import { useState } from "react";
-import { ProtectedRoute } from "./lib/protected-route";
+import { loginWithEmail, loginWithGoogle, registerWithEmail, logout } from "./lib/auth-helpers";
+import { useToast } from "./hooks/use-toast";
 
 function Router() {
+  const { user } = useAuth();
+  
   return (
     <Switch>
       <Route path="/" component={Home} />
-      <ProtectedRoute path="/profile" component={Profile} />
-      <ProtectedRoute path="/bookmarks" component={Bookmarks} />
+      <Route path="/profile">
+        {user ? <Profile /> : <Home />}
+      </Route>
+      <Route path="/bookmarks">
+        {user ? <Bookmarks /> : <Home />}
+      </Route>
       <Route path="/category/:category" component={Category} />
       <Route path="/search" component={Search} />
       <Route component={NotFound} />
@@ -30,15 +37,88 @@ function Router() {
 }
 
 function App() {
+  const { user, isLoading } = useAuth();
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
+  const { toast } = useToast();
+
+  const handleLogin = async (email: string, password: string) => {
+    try {
+      await loginWithEmail(email, password);
+      toast({
+        title: "로그인 성공",
+        description: "환영합니다!",
+      });
+      setIsLoginModalOpen(false);
+    } catch (error: any) {
+      toast({
+        title: "로그인 실패",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      await loginWithGoogle();
+      toast({
+        title: "로그인 성공",
+        description: "Google 계정으로 로그인되었습니다.",
+      });
+      setIsLoginModalOpen(false);
+      setIsSignupModalOpen(false);
+    } catch (error: any) {
+      toast({
+        title: "Google 로그인 실패",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleRegister = async (email: string, password: string, displayName: string) => {
+    try {
+      await registerWithEmail(email, password, displayName);
+      toast({
+        title: "회원가입 성공",
+        description: `환영합니다, ${displayName}님!`,
+      });
+      setIsSignupModalOpen(false);
+    } catch (error: any) {
+      toast({
+        title: "회원가입 실패",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast({
+        title: "로그아웃 성공",
+        description: "다음에 또 만나요!",
+      });
+    } catch (error: any) {
+      toast({
+        title: "로그아웃 실패",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <TooltipProvider>
       <div className="min-h-screen flex flex-col bg-neutral-50 text-neutral-900 dark:bg-neutral-900 dark:text-neutral-50">
         <Header 
+          user={user}
+          isLoading={isLoading}
           onLoginClick={() => setIsLoginModalOpen(true)}
           onSignupClick={() => setIsSignupModalOpen(true)}
+          onLogoutClick={handleLogout}
         />
         <main className="flex-grow">
           <Router />
@@ -49,6 +129,8 @@ function App() {
         <LoginModal 
           isOpen={isLoginModalOpen} 
           onClose={() => setIsLoginModalOpen(false)}
+          onLogin={handleLogin}
+          onGoogleLogin={handleGoogleLogin}
           onSignupClick={() => {
             setIsLoginModalOpen(false);
             setIsSignupModalOpen(true);
@@ -57,6 +139,8 @@ function App() {
         <SignupModal 
           isOpen={isSignupModalOpen} 
           onClose={() => setIsSignupModalOpen(false)}
+          onRegister={handleRegister}
+          onGoogleSignup={handleGoogleLogin}
           onLoginClick={() => {
             setIsSignupModalOpen(false);
             setIsLoginModalOpen(true);

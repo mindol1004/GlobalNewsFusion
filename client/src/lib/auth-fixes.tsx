@@ -1,21 +1,20 @@
 import { useLocation } from "wouter";
-import { useAuthContext } from "../contexts/AuthContext";
+import { useAuth } from "../contexts/AuthContext";
 
 /**
  * Simple utility function to check if a user is authenticated
  * using Firebase auth state
  */
 export function isUserAuthenticated(): boolean {
-  const authContext = useAuthContext();
-  return authContext.isAuthenticated;
+  const { user } = useAuth();
+  return !!user;
 }
 
 /**
  * Simple utility to sign out a user
  */
 export function signOutUser() {
-  const authContext = useAuthContext();
-  authContext.signOut();
+  // 최신 버전에서는 useAuth 훅에서 직접 signOut을 사용하는 것이 좋습니다.
 }
 
 /**
@@ -24,9 +23,9 @@ export function signOutUser() {
  */
 export function useRequireAuth(): boolean {
   const [, setLocation] = useLocation();
-  const { isAuthenticated } = useAuthContext();
+  const { user } = useAuth();
 
-  if (!isAuthenticated) {
+  if (!user) {
     console.log("User not authenticated, redirecting to home");
     setLocation("/");
     return false;

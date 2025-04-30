@@ -1,117 +1,96 @@
-import { createContext, useEffect, useState, useContext } from "react";
-import { 
-  getAuth, 
-  onAuthStateChanged, 
-  signOut as firebaseSignOut,
-  User as FirebaseUser,
-  onIdTokenChanged
-} from "firebase/auth";
-import { auth as firebaseAuth } from "../lib/firebase";
-import { apiRequest } from "../lib/queryClient";
-import { User } from "@shared/schema";
+import { createContext, useContext, useState, useEffect } from 'react';
+import { onAuthStateChanged, User } from 'firebase/auth';
+import { auth } from '../lib/firebase';
+import { apiRequest } from '../lib/queryClient';
+import { getCurrentUserToken } from '../lib/auth-helpers';
+import { User as UserProfile } from '@shared/schema';
 
 interface AuthContextType {
-  currentUser: FirebaseUser | null;
-  userProfile: User | null;
-  isAuthenticated: boolean;
-  isInitializing: boolean;
-  signOut: () => Promise<void>;
+  user: User | null;
+  userProfile: UserProfile | null;
+  isLoading: boolean;
+  error: Error | null;
 }
 
 const AuthContext = createContext<AuthContextType>({
-  currentUser: null,
+  user: null,
   userProfile: null,
-  isAuthenticated: false,
-  isInitializing: true,
-  signOut: async () => {},
+  isLoading: true,
+  error: null
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [currentUser, setCurrentUser] = useState<FirebaseUser | null>(null);
-  const [userProfile, setUserProfile] = useState<User | null>(null);
-  const [isInitializing, setIsInitializing] = useState(true);
-  
-  console.log("AuthProvider initializing");
+  const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
-  // Listen for auth state changes (user sign in/out)
   useEffect(() => {
-    let hasCompletedInitialCheck = false;
-    const initTimeout = setTimeout(() => {
-      if (!hasCompletedInitialCheck) {
-        console.log("Auth initialization timed out");
-        setIsInitializing(false);
-        hasCompletedInitialCheck = true;
-      }
-    }, 3000);
-
-    // This listens for token changes which is more reliable
-    const unsubscribe = onIdTokenChanged(firebaseAuth, async (user) => {
-      console.log("Auth token changed, user:", user ? "exists" : "null");
-      setCurrentUser(user);
+    console.log('Starting auth state listener');
+    
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      console.log('Auth state changed:', firebaseUser ? `User ${firebaseUser.uid}` : 'No user');
+      setUser(firebaseUser);
       
-      if (user) {
+      if (firebaseUser) {
         try {
-          // Create or update user in our backend if needed
-          await apiRequest("POST", "/api/user/register", {
-            email: user.email,
-            displayName: user.displayName,
-            photoURL: user.photoURL,
-            firebaseId: user.uid,
-            username: user.email?.split('@')[0] || `user_${Date.now()}`,
+          // Firebase 사용자가 있으면 서버에 사용자 정보 등록/업데이트
+          await apiRequest('POST', '/api/user/register', {
+            email: firebaseUser.email,
+            displayName: firebaseUser.displayName,
+            photoURL: firebaseUser.photoURL,
+            firebaseId: firebaseUser.uid,
+            username: firebaseUser.email?.split('@')[0] || `user_${Date.now()}`
           });
           
-          console.log("User registered or updated in backend");
-          
-          // Now fetch user profile from our backend
-          const response = await apiRequest("GET", "/api/user/profile");
-          const profile = await response.json();
-          console.log("Profile fetched:", profile);
-          setUserProfile(profile);
-        } catch (error) {
-          console.error("Error during profile setup:", error);
+          // 프로필 정보 가져오기
+          try {
+            const token = await getCurrentUserToken();
+            if (token) {
+              const response = await fetch('/api/user/profile', {
+                headers: {
+                  'Authorization': `Bearer ${token}`
+                }
+              });
+              
+              if (response.ok) {
+                const profile = await response.json();
+                console.log('User profile loaded:', profile);
+                setUserProfile(profile);
+              } else {
+                console.error('Failed to load profile:', response.status);
+                setUserProfile(null);
+              }
+            }
+          } catch (profileError) {
+            console.error('Profile error:', profileError);
+          }
+        } catch (e) {
+          console.error('Error registering user:', e);
+          setError(e instanceof Error ? e : new Error('Unknown error'));
         }
       } else {
-        // Clear user profile when signing out
+        // 로그아웃 상태
         setUserProfile(null);
       }
       
-      // Mark initialization as complete
-      if (!hasCompletedInitialCheck) {
-        console.log("Auth initialization complete");
-        setIsInitializing(false);
-        hasCompletedInitialCheck = true;
-        clearTimeout(initTimeout);
-      }
+      setIsLoading(false);
+    }, (authError) => {
+      console.error('Auth state observer error:', authError);
+      setError(authError instanceof Error ? authError : new Error('Unknown auth error'));
+      setIsLoading(false);
     });
     
-    return () => {
-      unsubscribe();
-      clearTimeout(initTimeout);
-    };
+    return () => unsubscribe();
   }, []);
-  
-  const signOut = async () => {
-    console.log("Signing out user");
-    try {
-      await firebaseSignOut(firebaseAuth);
-      // The auth state listener will handle the rest
-    } catch (error) {
-      console.error("Error signing out:", error);
-      setCurrentUser(null);
-      setUserProfile(null);
-    }
-  };
-  
+
   const value = {
-    currentUser,
+    user,
     userProfile,
-    isAuthenticated: !!currentUser,
-    isInitializing,
-    signOut,
+    isLoading,
+    error
   };
-  
-  console.log("AuthProvider rendering, isInitializing:", isInitializing);
-  
+
   return (
     <AuthContext.Provider value={value}>
       {children}
@@ -119,10 +98,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-export function useAuthContext() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuthContext must be used within an AuthProvider");
-  }
-  return context;
+export function useAuth() {
+  return useContext(AuthContext);
 }

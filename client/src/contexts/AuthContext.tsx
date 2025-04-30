@@ -3,7 +3,8 @@ import {
   getAuth, 
   onAuthStateChanged, 
   signOut as firebaseSignOut,
-  User as FirebaseUser 
+  User as FirebaseUser,
+  onIdTokenChanged
 } from "firebase/auth";
 import { auth as firebaseAuth } from "../lib/firebase";
 import { apiRequest } from "../lib/queryClient";
@@ -21,7 +22,7 @@ const AuthContext = createContext<AuthContextType>({
   currentUser: null,
   userProfile: null,
   isAuthenticated: false,
-  isInitializing: false, // Changed default to false so app doesn't get stuck
+  isInitializing: true,
   signOut: async () => {},
 });
 
@@ -31,55 +32,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isInitializing, setIsInitializing] = useState(true);
   
   console.log("AuthProvider initializing");
-  
+
+  // Listen for auth state changes (user sign in/out)
   useEffect(() => {
-    console.log("Setting up auth state listener");
     let hasCompletedInitialCheck = false;
-    
-    // Set a timeout to force-exit initialization state after a reasonable time
     const initTimeout = setTimeout(() => {
       if (!hasCompletedInitialCheck) {
-        console.log("Auth initialization timed out, forcing completion");
+        console.log("Auth initialization timed out");
         setIsInitializing(false);
         hasCompletedInitialCheck = true;
       }
     }, 3000);
-    
-    const unsubscribe = onAuthStateChanged(firebaseAuth, async (user) => {
-      console.log("Auth state changed, user:", user ? "exists" : "null");
+
+    // This listens for token changes which is more reliable
+    const unsubscribe = onIdTokenChanged(firebaseAuth, async (user) => {
+      console.log("Auth token changed, user:", user ? "exists" : "null");
       setCurrentUser(user);
       
       if (user) {
         try {
-          // Firebase persistence should be set to LOCAL in firebase.ts
-          console.log("Firebase persistence set to LOCAL");
+          // Create or update user in our backend if needed
+          await apiRequest("POST", "/api/user/register", {
+            email: user.email,
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+            firebaseId: user.uid,
+            username: user.email?.split('@')[0] || `user_${Date.now()}`,
+          });
           
-          try {
-            // Create or update user in our backend if needed
-            await apiRequest("POST", "/api/user/register", {
-              email: user.email,
-              displayName: user.displayName,
-              photoURL: user.photoURL,
-              firebaseId: user.uid,
-              username: user.email?.split('@')[0] || `user_${Date.now()}`,
-            });
-            
-            console.log("User registered or updated in backend");
-            
-            // Now fetch user profile from our backend
-            const response = await apiRequest("GET", "/api/user/profile");
-            const profile = await response.json();
-            console.log("Profile fetched:", profile);
-            setUserProfile(profile);
-          } catch (profileError) {
-            console.error("Error fetching user profile:", profileError);
-            // Continue without profile if api fails
-          }
+          console.log("User registered or updated in backend");
+          
+          // Now fetch user profile from our backend
+          const response = await apiRequest("GET", "/api/user/profile");
+          const profile = await response.json();
+          console.log("Profile fetched:", profile);
+          setUserProfile(profile);
         } catch (error) {
-          console.error("Error during auth setup:", error);
+          console.error("Error during profile setup:", error);
         }
       } else {
-        // Clear auth data when user is null
+        // Clear user profile when signing out
         setUserProfile(null);
       }
       
@@ -90,42 +82,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         hasCompletedInitialCheck = true;
         clearTimeout(initTimeout);
       }
-    }, (error) => {
-      // Handle auth observer error
-      console.error("Auth state observer error:", error);
-      
-      if (!hasCompletedInitialCheck) {
-        setIsInitializing(false);
-        hasCompletedInitialCheck = true;
-        clearTimeout(initTimeout);
-      }
     });
     
     return () => {
       unsubscribe();
       clearTimeout(initTimeout);
     };
-  }, []); 
+  }, []);
   
   const signOut = async () => {
-    console.log("AuthContext: Signing out user");
+    console.log("Signing out user");
     try {
-      // Sign out from Firebase
       await firebaseSignOut(firebaseAuth);
-      
-      // Clear state
-      setCurrentUser(null);
-      setUserProfile(null);
-      
-      // Force page refresh to clear all states
-      console.log("AuthContext: Sign out successful, redirecting to home");
-      window.location.href = "/";
+      // The auth state listener will handle the rest
     } catch (error) {
       console.error("Error signing out:", error);
-      // Fallback if Firebase signout fails
       setCurrentUser(null);
       setUserProfile(null);
-      window.location.href = "/";
     }
   };
   
@@ -148,5 +121,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useAuthContext() {
   const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error("useAuthContext must be used within an AuthProvider");
+  }
   return context;
 }

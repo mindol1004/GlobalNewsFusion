@@ -1,7 +1,9 @@
 import axios from "axios";
 
 // LibreTranslate API base URL - 사용자가 제공한 API 주소 사용
-const API_URL = process.env.LIBRE_TRANSLATE_URL || "http://mindol.synology.me:5000/translate";
+const API_URL =
+  process.env.LIBRE_TRANSLATE_URL ||
+  "https://mindol.synology.me:5000/translate";
 const API_KEY = process.env.LIBRE_TRANSLATE_API_KEY;
 
 interface TranslateParams {
@@ -37,7 +39,7 @@ export async function translateText(params: TranslateParams): Promise<string> {
 
     // Cache key for storing translation result
     const cacheKey = `${sourceLanguage || "auto"}_${targetLanguage}_${text}`;
-    
+
     // Check if the translation is cached
     const cachedTranslation = translationCache.get(cacheKey);
     if (cachedTranslation) {
@@ -50,7 +52,7 @@ export async function translateText(params: TranslateParams): Promise<string> {
       source: sourceLanguage || "auto",
       target: targetLanguage,
       format: "text",
-      api_key: API_KEY
+      api_key: API_KEY,
     };
 
     // Make request to LibreTranslate API
@@ -62,10 +64,10 @@ export async function translateText(params: TranslateParams): Promise<string> {
     });
 
     const translatedText = response.data.translatedText;
-    
+
     // Cache the translation result
     translationCache.set(cacheKey, translatedText);
-    
+
     return translatedText;
   } catch (error: any) {
     console.error("Translation error:", error.response?.data || error.message);
@@ -84,15 +86,15 @@ class TranslationCache {
 
   get(key: string): string | undefined {
     const item = this.cache.get(key);
-    
+
     if (!item) return undefined;
-    
+
     // Check if the item has expired
     if (Date.now() - item.timestamp > this.ttl) {
       this.cache.delete(key);
       return undefined;
     }
-    
+
     return item.text;
   }
 
@@ -106,7 +108,7 @@ class TranslationCache {
         this.cache.delete(oldKey);
       }
     }
-    
+
     this.cache.set(key, { text, timestamp: Date.now() });
   }
 }

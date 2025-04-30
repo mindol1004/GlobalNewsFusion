@@ -1,11 +1,11 @@
 import { Link, useLocation } from "wouter";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
-import { User } from "firebase/auth";
+import { User } from "@shared/schema";
 import { CATEGORIES } from "../types";
 
 interface HeaderProps {
-  user: User | null;
+  user: any | null;  // Firebase User 객체 또는 서버의 User 객체
   isLoading: boolean;
   onLoginClick: () => void;
   onSignupClick: () => void;
@@ -26,7 +26,7 @@ export default function Header({
     setTheme(theme === "dark" ? "light" : "dark");
   };
 
-  // Get the current category from the URL if we're on a category page
+  // URL에서 현재 카테고리 가져오기
   const category = location.startsWith("/category/") 
     ? location.replace("/category/", "") 
     : "";

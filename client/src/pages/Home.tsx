@@ -10,24 +10,40 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Home() {
+  console.log("Home component rendering");
   const [timeRange, setTimeRange] = useState("today");
   
   // Featured news (top headline)
-  const { data: featuredNews, isLoading: isFeaturedLoading } = useQuery({
+  const { data: featuredNews, isLoading: isFeaturedLoading, error: featuredError } = useQuery({
     queryKey: ["/api/news", { category: "general", pageSize: 3 }],
-    queryFn: () => fetchNews({ category: "general", pageSize: 3 }),
+    queryFn: () => {
+      console.log("Fetching featured news");
+      return fetchNews({ category: "general", pageSize: 3 });
+    },
   });
   
   // Top stories
-  const { data: topStories, isLoading: isTopStoriesLoading } = useQuery({
+  const { data: topStories, isLoading: isTopStoriesLoading, error: topStoriesError } = useQuery({
     queryKey: ["/api/news", { pageSize: 6 }],
-    queryFn: () => fetchNews({ pageSize: 6 }),
+    queryFn: () => {
+      console.log("Fetching top stories");
+      return fetchNews({ pageSize: 6 });
+    },
   });
   
   // International news
-  const { data: worldNews, isLoading: isWorldNewsLoading } = useQuery({
+  const { data: worldNews, isLoading: isWorldNewsLoading, error: worldNewsError } = useQuery({
     queryKey: ["/api/news", { category: "world", pageSize: 3 }],
-    queryFn: () => fetchNews({ category: "world", pageSize: 3 }),
+    queryFn: () => {
+      console.log("Fetching world news");
+      return fetchNews({ category: "world", pageSize: 3 });
+    },
+  });
+  
+  console.log("Home data:", { 
+    featuredNews, isFeaturedLoading, featuredError,
+    topStories, isTopStoriesLoading, topStoriesError,
+    worldNews, isWorldNewsLoading, worldNewsError
   });
   
   useEffect(() => {

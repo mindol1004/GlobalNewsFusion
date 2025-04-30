@@ -33,13 +33,18 @@ function App() {
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isSignupModalOpen, setIsSignupModalOpen] = useState(false);
 
+  console.log("App component rendering, isInitializing:", isInitializing);
+
   if (isInitializing) {
+    console.log("App is in initializing state, showing loading spinner");
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
       </div>
     );
   }
+
+  console.log("App initialization complete, rendering main content");
 
   return (
     <TooltipProvider>

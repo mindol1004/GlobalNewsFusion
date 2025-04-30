@@ -10,7 +10,15 @@ interface UserProfileDropdownProps {
 export default function UserProfileDropdown({ user }: UserProfileDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const { signOut } = useAuth();
+  const { signOut, isAuthenticated } = useAuth();
+  
+  // Handle case where user is not provided
+  // This can happen during authentication state changes
+  const safeUser = user || { 
+    username: "User", 
+    displayName: "User", 
+    email: "Loading..." 
+  };
   
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -27,11 +35,9 @@ export default function UserProfileDropdown({ user }: UserProfileDropdownProps) 
   }, []);
   
   // Get user initials for avatar
-  const getInitials = () => {
-    if (!user) return "U";
-    
-    if (user.displayName) {
-      return user.displayName
+  const getInitials = () => {    
+    if (safeUser.displayName) {
+      return safeUser.displayName
         .split(" ")
         .map(name => name[0])
         .join("")
@@ -39,7 +45,7 @@ export default function UserProfileDropdown({ user }: UserProfileDropdownProps) 
         .substring(0, 2);
     }
     
-    return user.username.substring(0, 2).toUpperCase();
+    return safeUser.username.substring(0, 2).toUpperCase();
   };
   
   return (

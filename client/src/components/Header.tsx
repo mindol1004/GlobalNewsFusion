@@ -64,7 +64,7 @@ export default function Header({ onLoginClick, onSignupClick }: HeaderProps) {
           
           {/* User Profile or Login Buttons */}
           {isAuthenticated || hasToken ? (
-            <UserProfileDropdown user={userProfile || { username: "User", displayName: "User" }} />
+            <UserProfileDropdown user={userProfile} />
           ) : (
             <div className="flex items-center gap-2">
               <Button 

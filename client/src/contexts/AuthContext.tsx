@@ -124,10 +124,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []); // Removed auth from dependency array
   
   const signOut = async () => {
+    console.log("AuthContext: Signing out user");
     try {
+      // Sign out from Firebase
       await firebaseSignOut(firebaseAuth);
+      
+      // Clear local storage and state
       localStorage.removeItem("authToken");
+      setCurrentUser(null);
       setUserProfile(null);
+      setRefreshNeeded(true);
+      
+      // Force page refresh to clear all states
+      console.log("AuthContext: Sign out successful, redirecting to home");
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 300);
     } catch (error) {
       console.error("Error signing out:", error);
     }

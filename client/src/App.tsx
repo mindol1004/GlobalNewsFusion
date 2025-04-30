@@ -5,6 +5,8 @@ import NotFound from "@/pages/not-found";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import MobileNavigation from "@/components/MobileNavigation";
+import LoginModal from "@/components/LoginModal";
+import SignupModal from "@/components/SignupModal";
 import Home from "@/pages/Home";
 import Profile from "@/pages/Profile";
 import Bookmarks from "@/pages/Bookmarks";
@@ -137,7 +139,22 @@ function App() {
         <Footer />
         <MobileNavigation />
         <Toaster />
-        {/* LoginModal과 SignupModal 컴포넌트는 기존 코드와 동일하게 사용 */}
+        
+        {/* 로그인 모달 */}
+        <LoginModal
+          isOpen={isLoginModalOpen}
+          onClose={() => setIsLoginModalOpen(false)}
+          onLogin={handleLogin}
+          onGoogleLogin={handleGoogleLogin}
+        />
+        
+        {/* 회원가입 모달 */}
+        <SignupModal
+          isOpen={isSignupModalOpen}
+          onClose={() => setIsSignupModalOpen(false)}
+          onSignup={handleRegister}
+          onGoogleLogin={handleGoogleLogin}
+        />
       </div>
     </TooltipProvider>
   );

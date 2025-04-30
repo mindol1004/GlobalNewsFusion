@@ -40,6 +40,16 @@ export default function Home() {
     },
   });
   
+  // Filter out duplicated articles
+  const getFilteredTopStories = () => {
+    if (!topStories?.articles?.length) return [];
+    
+    return topStories.articles.filter(article => 
+      !featuredNews?.articles || 
+      !featuredNews.articles.some(featured => featured.id === article.id)
+    ).slice(0, 3);
+  };
+  
   console.log("Home data:", { 
     featuredNews, isFeaturedLoading, featuredError,
     topStories, isTopStoriesLoading, topStoriesError,
@@ -106,17 +116,10 @@ export default function Home() {
             Array(3).fill(0).map((_, i) => (
               <Skeleton key={i} className="h-72 rounded-xl" />
             ))
-          ) : topStories?.articles?.length ? (
-            // Filter out articles already in featured news
-            topStories.articles
-              .filter(article => 
-                !featuredNews?.articles || 
-                !featuredNews.articles.some(featured => featured.id === article.id)
-              )
-              .slice(0, 3)
-              .map((article) => (
-                <NewsCard key={article.id} article={article} />
-              ))
+          ) : getFilteredTopStories().length > 0 ? (
+            getFilteredTopStories().map((article) => (
+              <NewsCard key={article.id} article={article} />
+            ))
           ) : (
             <div className="col-span-3 p-8 bg-white dark:bg-neutral-800 rounded-xl text-center">
               <h3 className="text-xl font-bold mb-2">No stories available</h3>
@@ -142,9 +145,14 @@ export default function Home() {
               <Skeleton key={i} className="h-72 rounded-xl" />
             ))
           ) : worldNews?.articles?.length ? (
-            worldNews.articles.map((article) => (
-              <NewsCard key={article.id} article={article} />
-            ))
+            worldNews.articles
+              .filter(article => 
+                !featuredNews?.articles || 
+                !featuredNews.articles.some(featured => featured.id === article.id)
+              )
+              .map((article) => (
+                <NewsCard key={article.id} article={article} />
+              ))
           ) : (
             <div className="col-span-3 p-8 bg-white dark:bg-neutral-800 rounded-xl text-center">
               <h3 className="text-xl font-bold mb-2">No international news available</h3>

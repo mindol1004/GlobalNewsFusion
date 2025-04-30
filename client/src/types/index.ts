@@ -26,9 +26,9 @@ export interface UserPreferences {
   theme: 'light' | 'dark' | 'system';
 }
 
-// Predefined categories
+// Predefined categories (using NewsData.io supported categories)
 export const CATEGORIES: Category[] = [
-  { id: 'general', name: 'Top Stories', slug: 'general' },
+  { id: 'top', name: 'Top Stories', slug: 'top' },
   { id: 'world', name: 'World', slug: 'world' },
   { id: 'business', name: 'Business', slug: 'business' },
   { id: 'technology', name: 'Technology', slug: 'technology' },

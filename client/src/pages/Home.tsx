@@ -15,10 +15,10 @@ export default function Home() {
   
   // Featured news (top headline)
   const { data: featuredNews, isLoading: isFeaturedLoading, error: featuredError } = useQuery({
-    queryKey: ["/api/news", { category: "general", pageSize: 3 }],
+    queryKey: ["/api/news", { category: "top", pageSize: 3 }],
     queryFn: () => {
       console.log("Fetching featured news");
-      return fetchNews({ category: "general", pageSize: 3 });
+      return fetchNews({ category: "top", pageSize: 3 });
     },
   });
   

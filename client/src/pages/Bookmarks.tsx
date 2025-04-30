@@ -4,12 +4,11 @@ import NewsCard from "../components/NewsCard";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
-import { isUserAuthenticated } from "../lib/auth-fixes";
 import { NewsArticle } from "@shared/schema";
+import { useAuth } from "../hooks/useAuth";
 
 export default function Bookmarks() {
-  // Use direct localStorage check for authenticated status
-  const [isAuth, setIsAuth] = useState(isUserAuthenticated());
+  const { user, isLoading: authLoading } = useAuth();
   const [, navigate] = useLocation();
   const { toast } = useToast();
   
@@ -21,7 +20,7 @@ export default function Bookmarks() {
   // Load bookmarks data
   useEffect(() => {
     const fetchBookmarks = async () => {
-      if (!isUserAuthenticated()) {
+      if (!user) {
         setIsLoading(false);
         return;
       }
@@ -31,7 +30,7 @@ export default function Bookmarks() {
         // In a real implementation, this would fetch data from the API
         setTimeout(() => {
           setIsLoading(false);
-        }, 1000);
+        }, 500);
       } catch (err) {
         console.error("Error fetching bookmarks:", err);
         setError(err instanceof Error ? err : new Error("Failed to fetch bookmarks"));
@@ -39,17 +38,14 @@ export default function Bookmarks() {
       }
     };
     
-    fetchBookmarks();
-  }, []);
+    if (!authLoading) {
+      fetchBookmarks();
+    }
+  }, [user, authLoading]);
   
   useEffect(() => {
-    // Check authentication directly
-    const isAuthenticated = isUserAuthenticated();
-    setIsAuth(isAuthenticated);
-    
     // Redirect if not authenticated
-    if (!isAuthenticated) {
-      console.log("Token not found, redirecting from bookmarks page");
+    if (!authLoading && !user) {
       navigate("/");
       toast({
         title: "Authentication required",
@@ -60,9 +56,17 @@ export default function Bookmarks() {
     
     // Set document title
     document.title = "Your Bookmarks - GlobalNews";
-  }, [navigate, toast]);
+  }, [navigate, toast, user, authLoading]);
   
-  if (!isAuth) {
+  if (authLoading) {
+    return (
+      <div className="container mx-auto px-4 py-6 flex items-center justify-center min-h-[50vh]">
+        <div className="animate-pulse text-xl">Loading your bookmarks...</div>
+      </div>
+    );
+  }
+  
+  if (!user) {
     return null; // Already redirecting in useEffect
   }
   
@@ -76,7 +80,7 @@ export default function Bookmarks() {
             className="text-sm"
             onClick={() => navigate("/")}
           >
-            <i className="fas fa-arrow-left mr-2"></i> Back to News
+            Back to News
           </Button>
         )}
       </div>
@@ -88,7 +92,7 @@ export default function Bookmarks() {
           ))}
         </div>
       ) : error ? (
-        <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-apple dark:shadow-apple-dark p-8 text-center">
+        <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm p-8 text-center">
           <h2 className="text-xl font-bold mb-2 dark:text-white">Error loading bookmarks</h2>
           <p className="text-neutral-600 dark:text-neutral-400 mb-4">There was an error loading your bookmarks. Please try again later.</p>
           <Button onClick={() => navigate("/")}>
@@ -102,7 +106,7 @@ export default function Bookmarks() {
           ))}
         </div>
       ) : (
-        <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-apple dark:shadow-apple-dark p-8 text-center">
+        <div className="bg-white dark:bg-neutral-800 rounded-xl shadow-sm p-8 text-center">
           <h2 className="text-xl font-bold mb-2 dark:text-white">No bookmarks yet</h2>
           <p className="text-neutral-600 dark:text-neutral-400 mb-4">Start adding articles to your bookmarks to read them later.</p>
           <Button onClick={() => navigate("/")}>

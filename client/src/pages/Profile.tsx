@@ -9,7 +9,7 @@ import { CATEGORIES } from "../types";
 import { updateUserPreferences, getUserPreferences } from "../lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { isUserAuthenticated, signOutUser } from "../lib/auth-fixes";
+import { useAuth } from "../hooks/useAuth";
 
 const LANGUAGES = [
   { code: "en", name: "English" },
@@ -26,22 +26,10 @@ const LANGUAGES = [
 ];
 
 export default function Profile() {
-  // Use direct localStorage check for authentication
-  const [isAuth, setIsAuth] = useState(isUserAuthenticated());
+  const { user, userProfile, isLoading: authLoading } = useAuth();
   const [, navigate] = useLocation();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-  
-  // Mock user data
-  const [userProfile, setUserProfile] = useState<{
-    displayName?: string;
-    email?: string;
-    preferredLanguage?: string;
-  }>({
-    displayName: "User",
-    email: "user@example.com",
-    preferredLanguage: "en"
-  });
   
   // Profile states
   const [displayName, setDisplayName] = useState("");
@@ -50,13 +38,8 @@ export default function Profile() {
   const [theme, setTheme] = useState("system");
   
   useEffect(() => {
-    // Check authentication directly
-    const isAuthenticated = isUserAuthenticated();
-    setIsAuth(isAuthenticated);
-    
     // Redirect if not authenticated
-    if (!isAuthenticated) {
-      console.log("Token not found, redirecting from profile page");
+    if (!authLoading && !user) {
       navigate("/");
       toast({
         title: "Authentication required",
@@ -70,18 +53,20 @@ export default function Profile() {
     document.title = "Your Profile - GlobalNews";
     
     // Load user settings
-    setIsLoading(true);
-    
-    setDisplayName(userProfile.displayName || "");
-    setPreferredLanguage(userProfile.preferredLanguage || "en");
-    
-    // Simulate getting user preferences
-    setTimeout(() => {
-      setPreferredCategories(["business", "technology", "sports"]);
-      setTheme("system");
-      setIsLoading(false);
-    }, 1000);
-  }, [navigate, toast, userProfile]);
+    if (user && !isLoading) {
+      setIsLoading(true);
+      
+      setDisplayName(userProfile?.displayName || user.displayName || "");
+      setPreferredLanguage(userProfile?.preferredLanguage || "en");
+      
+      // Simulate getting user preferences
+      setTimeout(() => {
+        setPreferredCategories(["business", "technology", "sports"]);
+        setTheme("system");
+        setIsLoading(false);
+      }, 500);
+    }
+  }, [navigate, toast, user, userProfile, authLoading]);
   
   const saveProfileSettings = async () => {
     setIsLoading(true);
@@ -118,8 +103,20 @@ export default function Profile() {
     });
   };
   
-  if (!isAuth) {
-    return null; // Already redirecting in useEffect
+  const handleLogout = () => {
+    navigate("/");
+    toast({
+      title: "Signed out",
+      description: "You have been signed out successfully.",
+    });
+  };
+  
+  if (authLoading || !user) {
+    return (
+      <div className="container mx-auto px-4 py-6 flex items-center justify-center min-h-[50vh]">
+        <div className="animate-pulse text-xl">Loading profile...</div>
+      </div>
+    );
   }
   
   return (
@@ -129,16 +126,17 @@ export default function Profile() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Sidebar */}
         <div className="md:col-span-1">
-          <Card className="bg-white dark:bg-neutral-800 shadow-apple dark:shadow-apple-dark">
+          <Card className="bg-white dark:bg-neutral-800 shadow-sm">
             <CardHeader>
               <CardTitle className="text-xl dark:text-white">
                 <div className="flex items-center gap-4">
                   <div className="h-14 w-14 rounded-full bg-primary flex items-center justify-center text-white text-lg">
-                    {userProfile?.displayName?.charAt(0) || userProfile?.email?.charAt(0) || "U"}
+                    {user.displayName ? user.displayName.charAt(0) : 
+                     user.email ? user.email.charAt(0) : "U"}
                   </div>
                   <div>
-                    <h2 className="text-xl font-bold">{userProfile?.displayName || "User"}</h2>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">{userProfile?.email}</p>
+                    <h2 className="text-xl font-bold">{user.displayName || user.email?.split('@')[0]}</h2>
+                    <p className="text-sm text-neutral-500 dark:text-neutral-400">{user.email}</p>
                   </div>
                 </div>
               </CardTitle>
@@ -146,30 +144,23 @@ export default function Profile() {
             <CardContent>
               <div className="space-y-2">
                 <Button variant="ghost" className="w-full justify-start" onClick={() => navigate("/profile")}>
-                  <i className="fas fa-user mr-2"></i> Profile
+                  Profile
                 </Button>
                 <Button variant="ghost" className="w-full justify-start" onClick={() => navigate("/bookmarks")}>
-                  <i className="fas fa-bookmark mr-2"></i> Bookmarks
+                  Bookmarks
                 </Button>
                 <Button variant="ghost" className="w-full justify-start text-neutral-700 dark:text-neutral-300">
-                  <i className="fas fa-bell mr-2"></i> Notifications
+                  Notifications
                 </Button>
                 <Button variant="ghost" className="w-full justify-start text-neutral-700 dark:text-neutral-300">
-                  <i className="fas fa-cog mr-2"></i> Account Settings
+                  Account Settings
                 </Button>
                 <Button 
                   variant="ghost" 
                   className="w-full justify-start text-red-500"
-                  onClick={() => {
-                    signOutUser();
-                    navigate("/");
-                    toast({
-                      title: "Signed out",
-                      description: "You have been signed out successfully.",
-                    });
-                  }}
+                  onClick={handleLogout}
                 >
-                  <i className="fas fa-sign-out-alt mr-2"></i> Sign Out
+                  Sign Out
                 </Button>
               </div>
             </CardContent>
@@ -178,7 +169,7 @@ export default function Profile() {
         
         {/* Main content */}
         <div className="md:col-span-2">
-          <Card className="bg-white dark:bg-neutral-800 shadow-apple dark:shadow-apple-dark">
+          <Card className="bg-white dark:bg-neutral-800 shadow-sm">
             <CardHeader>
               <CardTitle className="text-xl dark:text-white">Settings</CardTitle>
             </CardHeader>
@@ -206,7 +197,7 @@ export default function Profile() {
                       <Label htmlFor="email">Email</Label>
                       <Input
                         id="email"
-                        value={userProfile?.email || ""}
+                        value={user.email || ""}
                         disabled
                         className="mt-1 bg-neutral-50 dark:bg-neutral-700"
                       />
@@ -217,7 +208,7 @@ export default function Profile() {
                       <Button 
                         onClick={saveProfileSettings}
                         disabled={isLoading}
-                        className="bg-primary hover:bg-primary-dark text-white"
+                        className="bg-primary hover:bg-primary/90 text-white"
                       >
                         {isLoading ? "Saving..." : "Save Changes"}
                       </Button>
@@ -275,7 +266,7 @@ export default function Profile() {
                       <Button 
                         onClick={saveProfileSettings}
                         disabled={isLoading}
-                        className="bg-primary hover:bg-primary-dark text-white"
+                        className="bg-primary hover:bg-primary/90 text-white"
                       >
                         {isLoading ? "Saving..." : "Save Preferences"}
                       </Button>
@@ -306,7 +297,7 @@ export default function Profile() {
                       <Button 
                         onClick={saveProfileSettings}
                         disabled={isLoading}
-                        className="bg-primary hover:bg-primary-dark text-white"
+                        className="bg-primary hover:bg-primary/90 text-white"
                       >
                         {isLoading ? "Saving..." : "Save Appearance"}
                       </Button>

@@ -1,4 +1,4 @@
-import { useAuth } from "@/hooks/useAuth";
+import { useAuthContext } from "../contexts/AuthContext";
 import { Loader2 } from "lucide-react";
 import { Redirect, Route } from "wouter";
 import { useToast } from "@/hooks/use-toast";
@@ -16,7 +16,7 @@ export function ProtectedRoute({
 }: ProtectedRouteProps) {
   // Create a wrapper component that contains all our logic
   const ProtectedWrapper = () => {
-    const { isAuthenticated, isInitializing } = useAuth();
+    const { isAuthenticated, isInitializing } = useAuthContext();
     const { toast } = useToast();
     const [isRedirecting, setIsRedirecting] = useState(false);
     

@@ -1,15 +1,9 @@
-import axios from "axios";
 import { NewsApiResponse, NewsArticle } from "@shared/schema";
-
-// API Keys
-const NEWSDATA_IO_KEY = process.env.NEWSDATA_IO_KEY;
-const THE_NEWS_API_KEY = process.env.THE_NEWS_API_KEY;
+import axios from "axios";
 
 // Use NewsData.io API
 const USE_THE_NEWS_API = false;
 const API_BASE_URL = "https://newsdata.io/api/1/news";
-
-console.log(`Using NewsData.io for news data`);
 
 // Simple in-memory cache implementation
 interface Cache<T> {
@@ -18,8 +12,8 @@ interface Cache<T> {
 }
 
 class SimpleCache<T> implements Cache<T> {
-  private cache: Map<string, { value: T; timestamp: number }> = new Map();
-  private ttl: number; // Time to live in ms
+  private readonly cache: Map<string, { value: T; timestamp: number }> = new Map();
+  private readonly ttl: number;
 
   constructor(ttlMinutes: number = 10) {
     this.ttl = ttlMinutes * 60 * 1000;
@@ -27,15 +21,11 @@ class SimpleCache<T> implements Cache<T> {
 
   get(key: string): T | undefined {
     const item = this.cache.get(key);
-    
     if (!item) return undefined;
-    
-    // Check if the item has expired
     if (Date.now() - item.timestamp > this.ttl) {
       this.cache.delete(key);
       return undefined;
     }
-    
     return item.value;
   }
 
@@ -44,9 +34,21 @@ class SimpleCache<T> implements Cache<T> {
   }
 }
 
-// Create caches with different TTLs
-const newsCache = new SimpleCache<NewsApiResponse>(5); // 5 minutes for news lists
-const articleCache = new SimpleCache<NewsArticle>(30); // 30 minutes for individual articles
+const newsCache = new SimpleCache<NewsApiResponse>(5);
+const articleCache = new SimpleCache<NewsArticle>(30);
+
+// 🟢 Helper to safely get API keys at runtime
+function getNewsApiKey(): string {
+  const key = process.env.NEWSDATA_IO_KEY;
+  if (!key) throw new Error("Missing environment variable: NEWSDATA_IO_KEY");
+  return key;
+}
+
+function getTheNewsApiKey(): string {
+  const key = process.env.THE_NEWS_API_KEY;
+  if (!key) throw new Error("Missing environment variable: THE_NEWS_API_KEY");
+  return key;
+}
 
 interface FetchNewsParams {
   category?: string;
@@ -58,183 +60,140 @@ interface FetchNewsParams {
   pageSize?: number;
 }
 
-/**
- * Fetch news articles with optional filtering parameters
- */
 export async function fetchNews(params: FetchNewsParams = {}): Promise<NewsApiResponse> {
   try {
-    const { 
-      category, 
-      query, 
-      startDate, 
-      endDate, 
-      language = "en", 
-      page = 1, 
-      pageSize = 10 
+    const {
+      category,
+      query,
+      startDate,
+      endDate,
+      language = "en",
+      page = 1,
+      pageSize = 10
     } = params;
 
-    // Cache key for storing API response
-    const cacheKey = JSON.stringify({ 
-      ...params, 
-      apiKey: USE_THE_NEWS_API ? THE_NEWS_API_KEY : NEWSDATA_IO_KEY 
-    });
-    
-    // Check if the request is cached
-    const cachedResponse = newsCache.get(cacheKey);
-    if (cachedResponse) {
-      return cachedResponse;
-    }
+    const apiKey = USE_THE_NEWS_API ? getTheNewsApiKey() : getNewsApiKey();
 
-    // Build query parameters based on which API we're using
+    const cacheKey = JSON.stringify({ ...params, apiKey });
+    const cachedResponse = newsCache.get(cacheKey);
+    if (cachedResponse) return cachedResponse;
+
     const queryParams: Record<string, string | number> = {};
-    
+
     if (USE_THE_NEWS_API) {
-      // TheNewsAPI parameters
-      queryParams.api_token = THE_NEWS_API_KEY as string;
+      queryParams.api_token = apiKey;
       queryParams.language = language;
       queryParams.limit = pageSize;
       queryParams.page = page;
-      
       if (query) queryParams.search = query;
       if (category) queryParams.categories = category;
       if (startDate) queryParams.published_after = startDate;
       if (endDate) queryParams.published_before = endDate;
-      
+
       const response = await axios.get(`${API_BASE_URL}/all`, { params: queryParams });
-      
-      // Transform TheNewsAPI response to our standardized format
+
       const transformedResponse: NewsApiResponse = {
         status: "success",
-        totalResults: response.data.meta.found || 0,
+        totalResults: response.data.meta.found ?? 0,
         articles: response.data.data.map((article: any) => transformTheNewsApiArticle(article))
       };
-      
-      // Cache the response
+
       newsCache.set(cacheKey, transformedResponse);
-      
       return transformedResponse;
+
     } else {
-      // NewsData.io parameters
-      queryParams.apikey = NEWSDATA_IO_KEY as string;
+      queryParams.apikey = apiKey;
       queryParams.language = language;
       queryParams.size = pageSize;
-      // NewsData.io doesn't use numeric page parameter, only next_page_id
-      // So we only add it if it's not the first page and if it's a string
-      if (typeof page === 'string' && page !== '1') {
+      if (typeof page === "string" && page !== "1") {
         queryParams.page = page;
       }
-      
       if (query) queryParams.q = query;
       if (category) queryParams.category = category;
       if (startDate) queryParams.from_date = startDate;
       if (endDate) queryParams.to_date = endDate;
-      
+
       const response = await axios.get(API_BASE_URL, { params: queryParams });
-      
-      // Transform NewsData.io response to our standardized format
+
       const transformedResponse: NewsApiResponse = {
         status: response.data.status,
-        totalResults: response.data.totalResults || 0,
+        totalResults: response.data.totalResults ?? 0,
         articles: response.data.results.map((article: any) => transformNewsDataArticle(article))
       };
-      
-      // Cache the response
+
       newsCache.set(cacheKey, transformedResponse);
-      
       return transformedResponse;
     }
   } catch (error: any) {
-    console.error("Error fetching news:", error.response?.data || error.message);
+    console.error("Error fetching news:", error.response?.data ?? error.message);
     throw new Error(`Failed to fetch news: ${error.message}`);
   }
 }
 
-/**
- * Fetch a specific article by ID
- */
 export async function fetchArticleById(id: string): Promise<NewsArticle> {
   try {
-    // Check if the article is cached
     const cachedArticle = articleCache.get(id);
-    if (cachedArticle) {
-      return cachedArticle;
-    }
+    if (cachedArticle) return cachedArticle;
 
     if (USE_THE_NEWS_API) {
       const response = await axios.get(`${API_BASE_URL}/uuid/${id}`, {
-        params: {
-          api_token: THE_NEWS_API_KEY
-        }
+        params: { api_token: getTheNewsApiKey() }
       });
-      
+
       const article = transformTheNewsApiArticle(response.data.data);
       articleCache.set(id, article);
-      
       return article;
     } else {
-      // For NewsData.io, we don't have a direct endpoint to get by ID
-      // So we'll search by ID and get the first result
       const response = await axios.get(API_BASE_URL, {
-        params: {
-          apikey: NEWSDATA_IO_KEY,
-          q: id
-        }
+        params: { apikey: getNewsApiKey(), q: id }
       });
-      
+
       if (!response.data.results || response.data.results.length === 0) {
         throw new Error("Article not found");
       }
-      
+
       const article = transformNewsDataArticle(response.data.results[0]);
       articleCache.set(id, article);
-      
       return article;
     }
   } catch (error: any) {
-    console.error("Error fetching article by ID:", error.response?.data || error.message);
+    console.error("Error fetching article by ID:", error.response?.data ?? error.message);
     throw new Error(`Failed to fetch article: ${error.message}`);
   }
 }
 
-/**
- * Transform TheNewsAPI article to our standardized format
- */
 function transformTheNewsApiArticle(article: any): NewsArticle {
   return {
     id: article.uuid,
     title: article.title,
     description: article.description,
-    content: article.snippet || article.description,
+    content: article.snippet ?? article.description,
     url: article.url,
     image: article.image_url,
     publishedAt: article.published_at,
     source: {
       name: article.source,
-      url: article.source_url || ""
+      url: article.source_url ?? ""
     },
-    category: article.categories?.[0] || "general",
-    language: article.language || "en"
+    category: article.categories?.[0] ?? "general",
+    language: article.language ?? "en"
   };
 }
 
-/**
- * Transform NewsData.io article to our standardized format
- */
 function transformNewsDataArticle(article: any): NewsArticle {
   return {
     id: article.article_id,
     title: article.title,
-    description: article.description || "",
-    content: article.content || article.description || "",
+    description: article.description ?? "",
+    content: article.content ?? article.description ?? "",
     url: article.link,
     image: article.image_url,
     publishedAt: article.pubDate,
     source: {
       name: article.source_id,
-      url: article.source_url || ""
+      url: article.source_url ?? ""
     },
-    category: article.category?.[0] || "general",
-    language: article.language || "en"
+    category: article.category?.[0] ?? "general",
+    language: article.language ?? "en"
   };
 }
-

@@ -23,17 +23,17 @@ export const translationController = {
         sourceLanguage
       });
 
-      res.json({ 
-        originalText: text, 
+      res.json({
+        originalText: text,
         translatedText,
         sourceLanguage,
         targetLanguage
       });
     } catch (error: any) {
       console.error("Error translating text:", error);
-      res.status(500).json({ 
+      res.status(500).json({
         message: "Failed to translate text",
-        error: error.message 
+        error: error.message
       });
     }
   }

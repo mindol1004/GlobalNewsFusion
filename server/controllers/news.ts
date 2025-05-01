@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { fetchNews, fetchArticleById } from "../services/newsApi";
+import { fetchArticleById, fetchNews } from "../services/newsApi";
 
 export const newsController = {
   /**
@@ -30,9 +30,9 @@ export const newsController = {
       res.json(response);
     } catch (error: any) {
       console.error("Error fetching news:", error);
-      res.status(500).json({ 
+      res.status(500).json({
         message: "Failed to fetch news articles",
-        error: error.message 
+        error: error.message
       });
     }
   },
@@ -57,9 +57,9 @@ export const newsController = {
       res.json(article);
     } catch (error: any) {
       console.error("Error fetching article:", error);
-      res.status(500).json({ 
+      res.status(500).json({
         message: "Failed to fetch article",
-        error: error.message 
+        error: error.message
       });
     }
   }

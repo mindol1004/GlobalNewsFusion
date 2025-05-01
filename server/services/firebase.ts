@@ -1,7 +1,7 @@
-import { Request, Response, NextFunction } from "express";
-import { getAuth } from "firebase-admin/auth";
-import { initializeApp, cert } from "firebase-admin/app";
 import { User } from "@shared/schema";
+import { Request } from "express";
+import { cert, initializeApp } from "firebase-admin/app";
+import { getAuth } from "firebase-admin/auth";
 import { storage } from "../storage";
 
 // Initialize Firebase Admin SDK

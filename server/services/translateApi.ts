@@ -1,11 +1,5 @@
 import axios from "axios";
 
-// LibreTranslate API base URL - 사용자가 제공한 API 주소 사용
-const API_URL =
-  process.env.LIBRE_TRANSLATE_URL ||
-  "https://mindol.synology.me:5000/translate";
-const API_KEY = process.env.LIBRE_TRANSLATE_API_KEY;
-
 interface TranslateParams {
   text: string;
   targetLanguage: string;
@@ -20,65 +14,19 @@ interface TranslateResponse {
   };
 }
 
-/**
- * Translate text using LibreTranslate API
- */
-export async function translateText(params: TranslateParams): Promise<string> {
-  try {
-    const { text, targetLanguage, sourceLanguage } = params;
-
-    // Don't translate empty text
-    if (!text.trim()) {
-      return text;
-    }
-
-    // Check if the text is already in the target language
-    if (sourceLanguage === targetLanguage) {
-      return text;
-    }
-
-    // Cache key for storing translation result
-    const cacheKey = `${sourceLanguage || "auto"}_${targetLanguage}_${text}`;
-
-    // Check if the translation is cached
-    const cachedTranslation = translationCache.get(cacheKey);
-    if (cachedTranslation) {
-      return cachedTranslation;
-    }
-
-    // Prepare request data
-    const requestData = {
-      q: text,
-      source: sourceLanguage || "auto",
-      target: targetLanguage,
-      format: "text",
-      api_key: API_KEY,
-    };
-
-    // Make request to LibreTranslate API
-    const response = await axios.post<TranslateResponse>(API_URL, requestData, {
-      timeout: 30000, // 30초로 타임아웃 증가
-      timeoutErrorMessage: "번역 서버 연결 시간 초과",
-      retries: 3, // 재시도 횟수
-      retryDelay: 1000, // 재시도 간격 (1초)
-    });
-
-    const translatedText = response.data.translatedText;
-
-    // Cache the translation result
-    translationCache.set(cacheKey, translatedText);
-
-    return translatedText;
-  } catch (error: any) {
-    console.error("Translation error:", error.response?.data || error.message);
-    throw new Error(`Translation failed: ${error.message}`);
-  }
+// 🔐 환경변수는 함수 내부에서 안전하게 접근
+function getLibreTranslateUrl(): string | undefined {
+  return process.env.LIBRE_TRANSLATE_URL;
 }
 
-// Simple in-memory cache for translations
+function getLibreTranslateApiKey(): string | undefined {
+  return process.env.LIBRE_TRANSLATE_API_KEY;
+}
+
+// 🔄 번역 캐시 구현
 class TranslationCache {
-  private cache: Map<string, { text: string; timestamp: number }> = new Map();
-  private ttl: number; // Time to live in ms
+  private readonly cache: Map<string, { text: string; timestamp: number }> = new Map();
+  private readonly ttl: number; // Time to live in ms
 
   constructor(ttlMinutes: number = 60) {
     this.ttl = ttlMinutes * 60 * 1000;
@@ -86,10 +34,8 @@ class TranslationCache {
 
   get(key: string): string | undefined {
     const item = this.cache.get(key);
-
     if (!item) return undefined;
 
-    // Check if the item has expired
     if (Date.now() - item.timestamp > this.ttl) {
       this.cache.delete(key);
       return undefined;
@@ -99,9 +45,7 @@ class TranslationCache {
   }
 
   set(key: string, text: string): void {
-    // Limit cache size to prevent memory issues
     if (this.cache.size > 1000) {
-      // Delete the oldest 10% of entries
       const keys = Array.from(this.cache.keys());
       const oldestKeys = keys.slice(0, Math.floor(keys.length * 0.1));
       for (const oldKey of oldestKeys) {
@@ -114,3 +58,121 @@ class TranslationCache {
 }
 
 const translationCache = new TranslationCache();
+
+// 지원되는 언어 코드 리스트
+const supportedLanguageCodes = [
+  'ko', 'en', 'ja', 'zh', 'es', 'fr', 'de', 'ru',
+  'it', 'pt', 'ar', 'tr', 'nl', 'cs', 'pl'
+];
+
+// 언어 코드 정규화 함수
+function normalizeLanguageCode(langCode: string): string {
+  if (!langCode) return "auto";
+  
+  // 소문자 변환
+  const code = langCode.toLowerCase().trim();
+  
+  // 특정 언어 코드 매핑
+  const languageMap: Record<string, string> = {
+    "auto": "auto",
+    "en": "en",
+    "english": "en",
+    "ko": "ko",
+    "korean": "ko",
+    "한국어": "ko",
+    "fr": "fr",
+    "french": "fr",
+    "es": "es", 
+    "spanish": "es",
+    "de": "de",
+    "german": "de",
+    "it": "it",
+    "italian": "it",
+    "ja": "ja",
+    "japanese": "ja",
+    "일본어": "ja",
+    "ru": "ru",
+    "russian": "ru",
+    "zh": "zh",
+    "chinese": "zh",
+    "中文": "zh",
+    "pt": "pt",
+    "portuguese": "pt",
+    "ar": "ar",
+    "arabic": "ar",
+    "tr": "tr",
+    "turkish": "tr",
+    "nl": "nl",
+    "dutch": "nl",
+    "cs": "cs",
+    "czech": "cs",
+    "pl": "pl",
+    "polish": "pl"
+  };
+  
+  // 매핑된 코드가 있으면 반환
+  if (languageMap[code]) {
+    return languageMap[code];
+  }
+  
+  // 지원되는 언어 코드인지 확인
+  if (supportedLanguageCodes.includes(code)) {
+    return code;
+  }
+  
+  // 기본값으로 auto 반환 (소스 언어인 경우)
+  // 또는 오류가 발생하지 않도록 en 반환 (타겟 언어인 경우)
+  return code === "auto" ? "auto" : "en";
+}
+
+/**
+ * Translate text using LibreTranslate API
+ */
+export async function translateText(params: TranslateParams): Promise<string> {
+  try {
+    const { text, targetLanguage, sourceLanguage } = params;
+
+    if (!text.trim()) return text;
+    if (sourceLanguage === targetLanguage) return text;
+
+    // 언어 코드 정규화
+    const normalizedSourceLang = normalizeLanguageCode(sourceLanguage ?? "auto");
+    const normalizedTargetLang = normalizeLanguageCode(targetLanguage);
+
+    // 디버깅을 위해 로그 출력
+    console.log("Translation request:", {
+      originalSource: sourceLanguage,
+      originalTarget: targetLanguage,
+      normalizedSource: normalizedSourceLang,
+      normalizedTarget: normalizedTargetLang
+    });
+
+    const cacheKey = `${normalizedSourceLang}_${normalizedTargetLang}_${text}`;
+    const cachedTranslation = translationCache.get(cacheKey);
+    if (cachedTranslation) return cachedTranslation;
+
+    const requestData = {
+      q: text,
+      source: normalizedSourceLang,
+      target: normalizedTargetLang,
+      format: "text",
+      api_key: getLibreTranslateApiKey(),
+    };
+
+    const libreTranslateUrl = getLibreTranslateUrl();
+    if (!libreTranslateUrl) throw new Error("번역 서버 URL이 없습니다.");
+
+    const response = await axios.post<TranslateResponse>(libreTranslateUrl, requestData, {
+      timeout: 30000,
+      timeoutErrorMessage: "번역 서버 연결 시간 초과",
+    });
+
+    const translatedText = response.data.translatedText;
+    translationCache.set(cacheKey, translatedText);
+    return translatedText;
+
+  } catch (error: any) {
+    console.error("Translation error:", error.response?.data ?? error.message);
+    throw new Error(`Translation failed: ${error.message}`);
+  }
+}

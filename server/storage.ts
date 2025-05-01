@@ -1,4 +1,4 @@
-import { users, type User, type InsertUser, bookmarks, type Bookmark, type InsertBookmark, userPreferences, type UserPreferences, type InsertUserPreferences } from "@shared/schema";
+import { type Bookmark, type InsertBookmark, type InsertUser, type InsertUserPreferences, type User, type UserPreferences } from "@shared/schema";
 
 // modify the interface with any CRUD methods
 // you might need
@@ -25,9 +25,9 @@ export interface IStorage {
 }
 
 export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private bookmarks: Map<number, Bookmark>;
-  private userPrefs: Map<number, UserPreferences>;
+  private readonly users: Map<number, User>;
+  private readonly bookmarks: Map<number, Bookmark>;
+  private readonly userPrefs: Map<number, UserPreferences>;
   currentUserId: number;
   currentBookmarkId: number;
   currentPrefId: number;
@@ -67,7 +67,16 @@ export class MemStorage implements IStorage {
   async createUser(insertUser: InsertUser): Promise<User> {
     const id = this.currentUserId++;
     const createdAt = new Date();
-    const user: User = { ...insertUser, id, createdAt };
+    const user: User = {
+      ...insertUser,
+      id,
+      createdAt,
+      password: insertUser.password ?? null,
+      firebaseId: insertUser.firebaseId ?? null,
+      displayName: insertUser.displayName ?? null,
+      photoURL: insertUser.photoURL ?? null,
+      preferredLanguage: insertUser.preferredLanguage ?? null
+    };
     this.users.set(id, user);
     return user;
   }
@@ -103,7 +112,16 @@ export class MemStorage implements IStorage {
   async createBookmark(insertBookmark: InsertBookmark): Promise<Bookmark> {
     const id = this.currentBookmarkId++;
     const createdAt = new Date();
-    const bookmark: Bookmark = { ...insertBookmark, id, createdAt };
+    const bookmark: Bookmark = {
+      ...insertBookmark,
+      id,
+      createdAt,
+      description: insertBookmark.description ?? null,
+      imageUrl: insertBookmark.imageUrl ?? null,
+      source: insertBookmark.source ?? null,
+      publishedAt: insertBookmark.publishedAt ?? null,
+      category: insertBookmark.category ?? null
+    };
     this.bookmarks.set(id, bookmark);
     return bookmark;
   }
@@ -124,7 +142,14 @@ export class MemStorage implements IStorage {
 
   async createUserPreferences(insertPreferences: InsertUserPreferences): Promise<UserPreferences> {
     const id = this.currentPrefId++;
-    const preferences: UserPreferences = { ...insertPreferences, id };
+    const preferences: UserPreferences = {
+      ...insertPreferences,
+      id,
+      preferredLanguage: insertPreferences.preferredLanguage ?? null,
+      theme: insertPreferences.theme ?? null,
+      preferredCategories: insertPreferences.preferredCategories ?? {},
+      preferredSources: insertPreferences.preferredSources ?? {}
+    };
     this.userPrefs.set(id, preferences);
     return preferences;
   }

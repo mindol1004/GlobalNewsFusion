@@ -1,18 +1,14 @@
-import { Request, Response } from "express";
-import { storage } from "../storage";
-import { verifyFirebaseToken } from "../services/firebase";
-import { 
-  insertUserSchema, 
-  insertBookmarkSchema, 
-  insertUserPreferencesSchema,
-  User,
-  InsertUser,
-  Bookmark,
+import {
   InsertBookmark,
-  UserPreferences,
-  InsertUserPreferences
+  insertBookmarkSchema,
+  InsertUser,
+  InsertUserPreferences,
+  insertUserSchema,
+  User
 } from "@shared/schema";
+import { Request, Response } from "express";
 import { fetchArticleById } from "../services/newsApi";
+import { storage } from "../storage";
 
 // Add types for authenticated request
 interface AuthRequest extends Request {
@@ -28,9 +24,7 @@ export const userController = {
       const { email, displayName, photoURL, firebaseId } = req.body;
 
       if (!email || !firebaseId) {
-        return res.status(400).json({ 
-          message: "Email and Firebase ID are required" 
-        });
+        return res.status(400).json({ message: "Email과 Firebase ID가 필요합니다" });
       }
 
       // Check if user already exists
@@ -55,7 +49,7 @@ export const userController = {
         email,
         firebaseId,
         displayName: displayName || username,
-        photoURL: photoURL || undefined,
+        photoURL,
         preferredLanguage: "en"
       };
 
@@ -75,10 +69,10 @@ export const userController = {
 
       res.status(201).json(newUser);
     } catch (error: any) {
-      console.error("Error registering user:", error);
-      res.status(500).json({ 
-        message: "Failed to register user",
-        error: error.message 
+      console.error("사용자 등록 오류:", error);
+      res.status(500).json({
+        message: "사용자 등록에 실패했습니다",
+        error: error.message
       });
     }
   },
@@ -87,17 +81,17 @@ export const userController = {
    * Get user profile
    */
   getUserProfile: async (req: AuthRequest, res: Response) => {
-    try {
-      if (!req.user) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
+    if (!req.user) {
+      return res.status(401).json({ message: "인증되지 않은 요청입니다" });
+    }
 
+    try {
       res.json(req.user);
     } catch (error: any) {
-      console.error("Error fetching user profile:", error);
-      res.status(500).json({ 
-        message: "Failed to fetch user profile",
-        error: error.message 
+      console.error("프로필 조회 오류:", error);
+      res.status(500).json({
+        message: "프로필 조회에 실패했습니다",
+        error: error.message
       });
     }
   },
@@ -106,13 +100,12 @@ export const userController = {
    * Update user profile
    */
   updateUserProfile: async (req: AuthRequest, res: Response) => {
+    if (!req.user) {
+      return res.status(401).json({ message: "인증되지 않은 요청입니다" });
+    }
+
     try {
-      if (!req.user) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
-
       const { displayName, preferredLanguage } = req.body;
-
       const updatedUser = await storage.updateUser(req.user.id, {
         displayName,
         preferredLanguage
@@ -120,10 +113,10 @@ export const userController = {
 
       res.json(updatedUser);
     } catch (error: any) {
-      console.error("Error updating user profile:", error);
-      res.status(500).json({ 
-        message: "Failed to update user profile",
-        error: error.message 
+      console.error("프로필 업데이트 오류:", error);
+      res.status(500).json({
+        message: "프로필 업데이트에 실패했습니다",
+        error: error.message
       });
     }
   },
@@ -132,15 +125,15 @@ export const userController = {
    * Get user preferences
    */
   getUserPreferences: async (req: AuthRequest, res: Response) => {
-    try {
-      if (!req.user) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
+    if (!req.user) {
+      return res.status(401).json({ message: "인증되지 않은 요청입니다" });
+    }
 
+    try {
       const preferences = await storage.getUserPreferences(req.user.id);
 
+      // 환경설정이 없으면 기본값으로 생성
       if (!preferences) {
-        // Create default preferences if none exist
         const defaultPreferences: InsertUserPreferences = {
           userId: req.user.id,
           preferredCategories: ["general", "technology", "business"],
@@ -155,10 +148,10 @@ export const userController = {
 
       res.json(preferences);
     } catch (error: any) {
-      console.error("Error fetching user preferences:", error);
-      res.status(500).json({ 
-        message: "Failed to fetch user preferences",
-        error: error.message 
+      console.error("환경설정 조회 오류:", error);
+      res.status(500).json({
+        message: "환경설정 조회에 실패했습니다",
+        error: error.message
       });
     }
   },
@@ -167,57 +160,57 @@ export const userController = {
    * Update user preferences
    */
   updateUserPreferences: async (req: AuthRequest, res: Response) => {
-    try {
-      if (!req.user) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
+    if (!req.user) {
+      return res.status(401).json({ message: "인증되지 않은 요청입니다" });
+    }
 
-      const { 
-        preferredCategories, 
-        preferredSources, 
+    try {
+      const {
+        preferredCategories,
+        preferredSources,
         preferredLanguage,
         theme,
         displayName
       } = req.body;
 
-      // Update user profile if display name or language is provided
+      // 사용자 프로필 업데이트 (이름 또는 언어가 제공된 경우)
       if (displayName || preferredLanguage) {
         await storage.updateUser(req.user.id, {
-          displayName: displayName || req.user.displayName,
-          preferredLanguage: preferredLanguage || req.user.preferredLanguage
+          displayName: displayName ?? req.user.displayName,
+          preferredLanguage: preferredLanguage ?? req.user.preferredLanguage
         });
       }
 
-      // Get existing preferences
+      // 기존 환경설정 확인
       let preferences = await storage.getUserPreferences(req.user.id);
 
       if (!preferences) {
-        // Create new preferences if none exist
+        // 환경설정이 없으면 새로 생성
         const newPreferences: InsertUserPreferences = {
           userId: req.user.id,
-          preferredCategories: preferredCategories || ["general", "technology", "business"],
-          preferredSources: preferredSources || [],
-          preferredLanguage: preferredLanguage || req.user.preferredLanguage || "en",
-          theme: theme || "system"
+          preferredCategories: preferredCategories ?? ["general", "technology", "business"],
+          preferredSources: preferredSources ?? [],
+          preferredLanguage: preferredLanguage ?? req.user.preferredLanguage ?? "en",
+          theme: theme ?? "system"
         };
 
         preferences = await storage.createUserPreferences(newPreferences);
       } else {
-        // Update existing preferences
+        // 기존 환경설정 업데이트
         preferences = await storage.updateUserPreferences(req.user.id, {
           preferredCategories: preferredCategories !== undefined ? preferredCategories : preferences.preferredCategories,
           preferredSources: preferredSources !== undefined ? preferredSources : preferences.preferredSources,
-          preferredLanguage: preferredLanguage || preferences.preferredLanguage,
-          theme: theme || preferences.theme
+          preferredLanguage: preferredLanguage ?? preferences.preferredLanguage,
+          theme: theme ?? preferences.theme
         });
       }
 
       res.json(preferences);
     } catch (error: any) {
-      console.error("Error updating user preferences:", error);
-      res.status(500).json({ 
-        message: "Failed to update user preferences",
-        error: error.message 
+      console.error("환경설정 업데이트 오류:", error);
+      res.status(500).json({
+        message: "환경설정 업데이트에 실패했습니다",
+        error: error.message
       });
     }
   },
@@ -226,18 +219,18 @@ export const userController = {
    * Get user's bookmarked articles
    */
   getBookmarks: async (req: AuthRequest, res: Response) => {
-    try {
-      if (!req.user) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
+    if (!req.user) {
+      return res.status(401).json({ message: "인증되지 않은 요청입니다" });
+    }
 
+    try {
       const bookmarks = await storage.getBookmarksByUserId(req.user.id);
       res.json(bookmarks);
     } catch (error: any) {
-      console.error("Error fetching bookmarks:", error);
-      res.status(500).json({ 
-        message: "Failed to fetch bookmarks",
-        error: error.message 
+      console.error("북마크 조회 오류:", error);
+      res.status(500).json({
+        message: "북마크 조회에 실패했습니다",
+        error: error.message
       });
     }
   },
@@ -246,29 +239,29 @@ export const userController = {
    * Add a new bookmark
    */
   addBookmark: async (req: AuthRequest, res: Response) => {
-    try {
-      if (!req.user) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
+    if (!req.user) {
+      return res.status(401).json({ message: "인증되지 않은 요청입니다" });
+    }
 
+    try {
       const { articleId } = req.body;
 
       if (!articleId) {
-        return res.status(400).json({ message: "Article ID is required" });
+        return res.status(400).json({ message: "기사 ID가 필요합니다" });
       }
 
       // Check if bookmark already exists
       const existingBookmark = await storage.getBookmarkByArticleId(req.user.id, articleId);
 
       if (existingBookmark) {
-        return res.status(409).json({ message: "Article is already bookmarked" });
+        return res.status(409).json({ message: "이미 북마크된 기사입니다" });
       }
 
       // Fetch article details from the news API
       const article = await fetchArticleById(articleId);
 
       if (!article) {
-        return res.status(404).json({ message: "Article not found" });
+        return res.status(404).json({ message: "기사를 찾을 수 없습니다" });
       }
 
       // Create bookmark
@@ -289,10 +282,10 @@ export const userController = {
 
       res.status(201).json(bookmark);
     } catch (error: any) {
-      console.error("Error adding bookmark:", error);
-      res.status(500).json({ 
-        message: "Failed to add bookmark",
-        error: error.message 
+      console.error("북마크 추가 오류:", error);
+      res.status(500).json({
+        message: "북마크 추가에 실패했습니다",
+        error: error.message
       });
     }
   },
@@ -301,33 +294,33 @@ export const userController = {
    * Remove a bookmark
    */
   removeBookmark: async (req: AuthRequest, res: Response) => {
-    try {
-      if (!req.user) {
-        return res.status(401).json({ message: "Unauthorized" });
-      }
+    if (!req.user) {
+      return res.status(401).json({ message: "인증되지 않은 요청입니다" });
+    }
 
+    try {
       const { id } = req.params;
 
       if (!id) {
-        return res.status(400).json({ message: "Article ID is required" });
+        return res.status(400).json({ message: "기사 ID가 필요합니다" });
       }
 
       // Check if bookmark exists
       const bookmark = await storage.getBookmarkByArticleId(req.user.id, id);
 
       if (!bookmark) {
-        return res.status(404).json({ message: "Bookmark not found" });
+        return res.status(404).json({ message: "북마크를 찾을 수 없습니다" });
       }
 
       // Delete bookmark
       await storage.deleteBookmark(req.user.id, id);
 
-      res.status(200).json({ message: "Bookmark removed successfully" });
+      res.status(200).json({ message: "북마크가 성공적으로 제거되었습니다" });
     } catch (error: any) {
-      console.error("Error removing bookmark:", error);
-      res.status(500).json({ 
-        message: "Failed to remove bookmark",
-        error: error.message 
+      console.error("북마크 제거 오류:", error);
+      res.status(500).json({
+        message: "북마크 제거에 실패했습니다",
+        error: error.message
       });
     }
   }

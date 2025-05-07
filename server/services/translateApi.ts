@@ -176,7 +176,7 @@ export async function translateText(params: TranslateParams): Promise<string> {
       libreTranslateUrl,
       requestData,
       {
-        timeout: 30000,
+        timeout: 10000,
         timeoutErrorMessage: "번역 서버 연결 시간 초과",
       },
     );

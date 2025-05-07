@@ -16,7 +16,8 @@ interface TranslateResponse {
 
 // 🔐 환경변수는 함수 내부에서 안전하게 접근
 function getLibreTranslateUrl(): string | undefined {
-  return process.env.LIBRE_TRANSLATE_URL || 'https://libretranslate.de';
+  // Use public LibreTranslate instance as fallback
+  return process.env.LIBRE_TRANSLATE_URL || 'https://translate.argosopentech.com';
 }
 
 function getLibreTranslateApiKey(): string | undefined {

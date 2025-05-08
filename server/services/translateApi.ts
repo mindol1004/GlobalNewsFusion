@@ -169,6 +169,7 @@ export async function translateText(params: TranslateParams): Promise<string> {
     };
 
     const libreTranslateUrl = getLibreTranslateUrl();
+
     if (!libreTranslateUrl) throw new Error("번역 서버 URL이 없습니다.");
 
     const response = await axios.post<TranslateResponse>(

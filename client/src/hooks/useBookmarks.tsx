@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { addBookmark, removeBookmark, fetchBookmarks } from "../lib/api";
 import { useAuth } from "../hooks/useAuth";
@@ -6,10 +5,10 @@ import { useToast } from "./use-toast";
 import { NewsArticle } from "@shared/schema";
 
 export function useBookmarks() {
-  const { user, userProfile } = useAuth();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const { toast } = useToast();
-  
+
   const {
     data: bookmarks = [],
     isLoading,
@@ -20,7 +19,7 @@ export function useBookmarks() {
     queryFn: fetchBookmarks,
     placeholderData: [],
   });
-  
+
   const addBookmarkMutation = useMutation({
     mutationFn: addBookmark,
     onSuccess: () => {
@@ -39,7 +38,7 @@ export function useBookmarks() {
       });
     },
   });
-  
+
   const removeBookmarkMutation = useMutation({
     mutationFn: removeBookmark,
     onSuccess: () => {
@@ -58,11 +57,13 @@ export function useBookmarks() {
       });
     },
   });
-  
+
   const isBookmarked = (articleId: string) => {
-    return (bookmarks as NewsArticle[]).some(bookmark => bookmark.id === articleId);
+    return (bookmarks as NewsArticle[]).some(
+      (bookmark) => bookmark.id === articleId,
+    );
   };
-  
+
   const toggleBookmark = async (article: NewsArticle) => {
     if (!user) {
       toast({
@@ -72,7 +73,7 @@ export function useBookmarks() {
       });
       return;
     }
-    
+
     try {
       if (isBookmarked(article.id)) {
         await removeBookmarkMutation.mutateAsync(article.id);
@@ -87,7 +88,7 @@ export function useBookmarks() {
       });
     }
   };
-  
+
   return {
     bookmarks,
     isLoading,
@@ -96,6 +97,6 @@ export function useBookmarks() {
     toggleBookmark,
     addBookmark: addBookmarkMutation.mutate,
     removeBookmark: removeBookmarkMutation.mutate,
-    isAuthenticated: !!user
+    isAuthenticated: !!user,
   };
 }

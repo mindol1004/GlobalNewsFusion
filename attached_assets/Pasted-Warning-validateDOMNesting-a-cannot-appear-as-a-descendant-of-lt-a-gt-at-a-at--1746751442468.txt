@@ -1,0 +1,22 @@
+Warning: validateDOMNesting(...): <a> cannot appear as a descendant of &lt;a&gt;.
+    at a
+    at a
+    at https://3f4f482c-298c-46af-b56f-9d3267bd6259-00-6095xuflchpr.kirk.replit.dev:3000/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=4edc4b55:294:18
+    at div
+    at section
+    at TrendingTopics
+    at div
+    at Home (https://3f4f482c-298c-46af-b56f-9d3267bd6259-00-6095xuflchpr.kirk.replit.dev:3000/src/pages/Home.tsx:31:37)
+    at Route (https://3f4f482c-298c-46af-b56f-9d3267bd6259-00-6095xuflchpr.kirk.replit.dev:3000/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=4edc4b55:280:16)
+    at Switch (https://3f4f482c-298c-46af-b56f-9d3267bd6259-00-6095xuflchpr.kirk.replit.dev:3000/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js?v=4edc4b55:336:17)
+    at Router (https://3f4f482c-298c-46af-b56f-9d3267bd6259-00-6095xuflchpr.kirk.replit.dev:3000/src/App.tsx?v=6f_getDxM-60pAAie1zjH:44:20)
+    at main
+    at div
+    at TranslationProvider (https://3f4f482c-298c-46af-b56f-9d3267bd6259-00-6095xuflchpr.kirk.replit.dev:3000/src/contexts/TranslationContext.tsx:35:39)
+    at Provider (https://3f4f482c-298c-46af-b56f-9d3267bd6259-00-6095xuflchpr.kirk.replit.dev:3000/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-DYDPZKQJ.js?v=d19a7077:48:15)
+    at TooltipProvider (https://3f4f482c-298c-46af-b56f-9d3267bd6259-00-6095xuflchpr.kirk.replit.dev:3000/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js?v=e174bca7:58:5)
+    at App (https://3f4f482c-298c-46af-b56f-9d3267bd6259-00-6095xuflchpr.kirk.replit.dev:3000/src/App.tsx?v=6f_getDxM-60pAAie1zjH:104:31)
+    at V (https://3f4f482c-298c-46af-b56f-9d3267bd6259-00-6095xuflchpr.kirk.replit.dev:3000/@fs/home/runner/workspace/node_modules/.vite/deps/next-themes.js?v=7f350312:44:25)
+    at J (https://3f4f482c-298c-46af-b56f-9d3267bd6259-00-6095xuflchpr.kirk.replit.dev:3000/@fs/home/runner/workspace/node_modules/.vite/deps/next-themes.js?v=7f350312:42:18)
+    at ThemeProvider (https://3f4f482c-298c-46af-b56f-9d3267bd6259-00-6095xuflchpr.kirk.replit.dev:3000/src/components/ThemeProvider.tsx?v=6f_getDxM-60pAAie1zjH:18:33)
+    at QueryClientProvider (https://3f4f482c-298c-46af-b56f-9d3267bd6259-00-6095xuflchpr.kirk.replit.dev:3000/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js?v=08d0e9ff:2875:3)

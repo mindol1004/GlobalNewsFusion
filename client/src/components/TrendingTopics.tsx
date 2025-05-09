@@ -1,25 +1,27 @@
-import { Link } from "wouter";
 
-const TRENDING_TOPICS = [
-  { id: "ai", name: "#ArtificialIntelligence" },
-  { id: "climate", name: "#ClimateAction" },
-  { id: "economy", name: "#EconomicOutlook" },
-  { id: "healthcare", name: "#HealthcareInnovation" },
-  { id: "sports", name: "#WorldCup" },
-  { id: "tech", name: "#TechInnovation" },
-];
+import React from 'react';
+import { Link } from 'wouter';
 
 export default function TrendingTopics() {
+  const trendingTopics = [
+    'Technology',
+    'Politics',
+    'Business',
+    'Entertainment',
+    'Sports'
+  ];
+
   return (
-    <section className="mb-10">
-      <h2 className="text-2xl font-bold mb-6 dark:text-white">Trending Topics</h2>
-      
-      <div className="flex flex-wrap gap-3">
-        {TRENDING_TOPICS.map((topic) => (
-          <Link key={topic.id} href={`/search?q=${encodeURIComponent(topic.name.substring(1))}`}>
-            <a className="px-4 py-2 bg-white dark:bg-neutral-800 rounded-full shadow-apple dark:shadow-apple-dark text-neutral-800 dark:text-neutral-100 font-medium hover:bg-neutral-50 dark:hover:bg-neutral-700 transition-colors">
-              {topic.name}
-            </a>
+    <section className="py-4">
+      <h2 className="text-xl font-semibold mb-3">Trending Topics</h2>
+      <div className="flex flex-wrap gap-2">
+        {trendingTopics.map((topic) => (
+          <Link
+            key={topic}
+            href={`/search?q=${encodeURIComponent(topic)}`}
+            className="px-3 py-1 bg-neutral-100 dark:bg-neutral-800 rounded-full text-sm hover:bg-neutral-200 dark:hover:bg-neutral-700 transition-colors"
+          >
+            {topic}
           </Link>
         ))}
       </div>
